@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+.DS_Store
+build/
+dist/
+# Generated outputs (kept reproducible via `wcp all`); ignore by default.
+outputs/*.csv
+outputs/*.md
+outputs/figures/*.png
+.venv/
+venv/

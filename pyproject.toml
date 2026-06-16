@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wcp"
+version = "0.1.0"
+description = "World Cup 2026 quantamental prediction & value-betting engine"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "WCP" }]
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scipy>=1.10",
+    "scikit-learn>=1.3",
+    "pyyaml>=6.0",
+    "tabulate>=0.9",
+]
+
+[project.optional-dependencies]
+# Heavy / optional layers. The engine runs fully without these; they upgrade
+# the xG ensemble when present.
+ml = ["xgboost>=2.0", "lightgbm>=4.0"]
+bayes = ["pymc>=5.0", "arviz>=0.17"]
+viz = ["matplotlib>=3.7", "plotly>=5.18"]
+app = ["streamlit>=1.30"]
+full = [
+    "xgboost>=2.0", "lightgbm>=4.0", "pymc>=5.0", "arviz>=0.17",
+    "matplotlib>=3.7", "plotly>=5.18", "streamlit>=1.30",
+]
+dev = ["pytest>=7.4", "pytest-cov>=4.1"]
+
+[project.scripts]
+wcp = "wcp.app.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

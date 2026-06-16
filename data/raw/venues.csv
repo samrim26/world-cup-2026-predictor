@@ -1,0 +1,17 @@
+city,country,venue,lat,lon,altitude_m,climate,roof
+Mexico City,Mexico,Estadio Azteca,19.3,-99.15,2240,altitude_temperate,0
+Guadalajara,Mexico,Estadio Akron,20.68,-103.46,1560,altitude_warm,0
+Monterrey,Mexico,Estadio BBVA,25.67,-100.31,540,hot_dry,0
+Toronto,Canada,BMO Field,43.63,-79.42,76,temperate,0
+Vancouver,Canada,BC Place,49.28,-123.11,0,temperate,1
+Atlanta,United States,Mercedes-Benz Stadium,33.75,-84.4,320,hot_humid,1
+Boston,United States,Gillette Stadium,42.09,-71.26,90,temperate,0
+Dallas,United States,AT&T Stadium,32.75,-97.09,180,hot_humid,1
+Houston,United States,NRG Stadium,29.68,-95.41,15,hot_humid,1
+Kansas City,United States,Arrowhead Stadium,39.05,-94.48,270,hot_humid,0
+Los Angeles,United States,SoFi Stadium,33.95,-118.34,30,warm_dry,1
+Miami,United States,Hard Rock Stadium,25.96,-80.24,3,hot_humid,0
+New York,United States,MetLife Stadium,40.81,-74.07,5,temperate,0
+Philadelphia,United States,Lincoln Financial Field,39.9,-75.17,12,hot_humid,0
+San Francisco,United States,Levi's Stadium,37.4,-121.97,9,warm_dry,0
+Seattle,United States,Lumen Field,47.6,-122.33,15,temperate,0

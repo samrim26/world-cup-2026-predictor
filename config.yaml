@@ -1,0 +1,116 @@
+# =============================================================================
+# World Cup 2026 Predictor — master configuration
+# Every weight, knob, and path the engine uses lives here. Nothing is hardcoded
+# in the model layers; change behaviour by editing this file.
+# =============================================================================
+
+seed: 42                      # global RNG seed -> reproducible simulations
+
+paths:
+  data_raw: data/raw
+  data_processed: data/processed
+  data_external: data/external
+  outputs: outputs
+  figures: outputs/figures
+
+# ---------------------------------------------------------------------------
+# Layer 1 — composite team strength. Weights MUST sum to ~1.0 (validated).
+# ---------------------------------------------------------------------------
+strength_weights:
+  elo: 0.30
+  recent_form: 0.15
+  squad_value: 0.15
+  qualification: 0.10
+  attack_defense_balance: 0.10
+  manager_stability: 0.07
+  confederation: 0.05
+  tournament_experience: 0.04
+  goalkeeper_penalty: 0.04
+
+# Fitting on real results: half-life (days) for recency decay of match weight.
+ratings:
+  recency_half_life_days: 540
+
+# Confederation strength multipliers (applied as a small rating shift).
+confederation_adjustment:
+  UEFA: 1.00
+  CONMEBOL: 0.97
+  CONCACAF: 0.86
+  CAF: 0.84
+  AFC: 0.80
+  OFC: 0.68
+
+# ---------------------------------------------------------------------------
+# Layer 4 — expected goals
+# ---------------------------------------------------------------------------
+xg:
+  base_goal_rate: 1.35        # league-average goals per team per match
+  home_advantage: 0.25        # additive log-lambda boost for a true host
+  regional_advantage: 0.10    # smaller boost for confederation-near hosts
+  dixon_coles_rho: -0.07      # low-score correlation correction (tau)
+  strength_to_xg_scale: 0.45  # maps rating diff (in std units) -> log lambda
+                              # (calibrated on real goal distributions)
+  max_goals: 7                # correct-score matrix truncation (0..7 per side)
+  knockout_tempo: 0.92        # xG multiplier in knockout regulation
+  extra_time_tempo: 0.34      # xG multiplier for a 30-min extra-time period
+
+# Ensemble blend across the three xG estimators. Reweighted automatically if a
+# component is unavailable (e.g. PyMC/XGBoost not installed).
+ensemble_weights:
+  dixon_coles: 0.50
+  bayesian: 0.25
+  ml: 0.25
+
+# ---------------------------------------------------------------------------
+# Layer 3 — match adjustments
+# ---------------------------------------------------------------------------
+adjustments:
+  rest_day_value: 0.015       # log-lambda per rest-day advantage vs opponent
+  travel_per_1000km: -0.020   # fatigue penalty per 1000 km since last match
+  timezone_per_hour: -0.010   # penalty per hour of timezone shift
+  altitude_ref_m: 1000        # altitude above this benefits acclimatised teams
+  altitude_per_1000m: -0.05   # penalty for non-altitude teams per 1000m
+  heat_penalty: -0.03         # hot+humid midday penalty (applies to both)
+  injury_star_out: -0.08      # per unavailable key player (log-lambda)
+  knockout_conservatism: 0.96 # extra draw-tendency shrink in knockouts
+
+# ---------------------------------------------------------------------------
+# Layer 5 — simulation
+# ---------------------------------------------------------------------------
+simulation:
+  n_sims: 100000
+  max_sims: 1000000
+  strength_sd: 0.18           # per-sim sampling sd of team strength (uncertainty)
+  penalty_base_conv: 0.75     # baseline penalty conversion probability
+  penalty_skill_scale: 0.10   # +/- from penalty_rating (z-scored)
+
+# ---------------------------------------------------------------------------
+# Layer 6 — value betting
+# ---------------------------------------------------------------------------
+value:
+  kelly_fraction: 0.25        # fractional Kelly
+  kelly_cap: 0.05             # max stake as fraction of bankroll
+  min_edge_strong: 0.06
+  min_edge_moderate: 0.03
+  min_edge_thin: 0.015
+  uncertainty_penalty: 0.50   # edge shrink = penalty * (1 - confidence*quality)
+  devig_method: proportional  # proportional | shin
+
+# ---------------------------------------------------------------------------
+# Multi-lens Power Index — blend weights for the consensus ranking.
+# (An optional `external` lens auto-activates if data/external/external_ranking.csv
+#  exists; give it weight here or it defaults to 0.15.)
+# ---------------------------------------------------------------------------
+power_index_weights:
+  model: 0.30
+  sim: 0.25
+  market: 0.20
+  elo: 0.15
+  form: 0.10
+
+# ---------------------------------------------------------------------------
+# Data quality scoring
+# ---------------------------------------------------------------------------
+data_quality:
+  high_threshold: 0.80
+  medium_threshold: 0.50

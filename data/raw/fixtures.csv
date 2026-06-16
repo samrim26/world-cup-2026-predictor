@@ -1,0 +1,105 @@
+match_id,date,kickoff_local,stage,round,group,team_a,team_b,venue,city,country,lat,lon,altitude_m
+G001,2026-06-11,16:00,group,MD1,A,Mexico,South Africa,Estadio Azteca,Mexico City,Mexico,19.3,-99.15,2240
+G002,2026-06-11,19:00,group,MD1,A,South Korea,Czech Republic,Estadio Akron,Guadalajara,Mexico,20.68,-103.46,1560
+G003,2026-06-12,22:00,group,MD1,B,Canada,Bosnia and Herzegovina,Estadio BBVA,Monterrey,Mexico,25.67,-100.31,540
+G004,2026-06-12,13:00,group,MD1,B,Qatar,Switzerland,BMO Field,Toronto,Canada,43.63,-79.42,76
+G005,2026-06-13,16:00,group,MD1,C,Brazil,Morocco,BC Place,Vancouver,Canada,49.28,-123.11,0
+G006,2026-06-13,19:00,group,MD1,C,Haiti,Scotland,Mercedes-Benz Stadium,Atlanta,United States,33.75,-84.4,320
+G007,2026-06-14,22:00,group,MD1,D,United States,Paraguay,Gillette Stadium,Boston,United States,42.09,-71.26,90
+G008,2026-06-14,13:00,group,MD1,D,Australia,Turkey,AT&T Stadium,Dallas,United States,32.75,-97.09,180
+G009,2026-06-15,16:00,group,MD1,E,Germany,Curacao,NRG Stadium,Houston,United States,29.68,-95.41,15
+G010,2026-06-15,19:00,group,MD1,E,Ivory Coast,Ecuador,Arrowhead Stadium,Kansas City,United States,39.05,-94.48,270
+G011,2026-06-11,22:00,group,MD1,F,Netherlands,Japan,SoFi Stadium,Los Angeles,United States,33.95,-118.34,30
+G012,2026-06-11,13:00,group,MD1,F,Sweden,Tunisia,Hard Rock Stadium,Miami,United States,25.96,-80.24,3
+G013,2026-06-12,16:00,group,MD1,G,Belgium,Egypt,MetLife Stadium,New York,United States,40.81,-74.07,5
+G014,2026-06-12,19:00,group,MD1,G,Iran,New Zealand,Lincoln Financial Field,Philadelphia,United States,39.9,-75.17,12
+G015,2026-06-13,22:00,group,MD1,H,Spain,Cape Verde,Levi's Stadium,San Francisco,United States,37.4,-121.97,9
+G016,2026-06-13,13:00,group,MD1,H,Saudi Arabia,Uruguay,Lumen Field,Seattle,United States,47.6,-122.33,15
+G017,2026-06-14,16:00,group,MD1,I,France,Senegal,Estadio Azteca,Mexico City,Mexico,19.3,-99.15,2240
+G018,2026-06-14,19:00,group,MD1,I,Iraq,Norway,Estadio Akron,Guadalajara,Mexico,20.68,-103.46,1560
+G019,2026-06-15,22:00,group,MD1,J,Argentina,Algeria,Estadio BBVA,Monterrey,Mexico,25.67,-100.31,540
+G020,2026-06-15,13:00,group,MD1,J,Austria,Jordan,BMO Field,Toronto,Canada,43.63,-79.42,76
+G021,2026-06-11,16:00,group,MD1,K,Portugal,DR Congo,BC Place,Vancouver,Canada,49.28,-123.11,0
+G022,2026-06-11,19:00,group,MD1,K,Uzbekistan,Colombia,Mercedes-Benz Stadium,Atlanta,United States,33.75,-84.4,320
+G023,2026-06-12,22:00,group,MD1,L,England,Croatia,Gillette Stadium,Boston,United States,42.09,-71.26,90
+G024,2026-06-12,13:00,group,MD1,L,Ghana,Panama,AT&T Stadium,Dallas,United States,32.75,-97.09,180
+G025,2026-06-16,16:00,group,MD2,A,Mexico,South Korea,NRG Stadium,Houston,United States,29.68,-95.41,15
+G026,2026-06-16,19:00,group,MD2,A,Czech Republic,South Africa,Arrowhead Stadium,Kansas City,United States,39.05,-94.48,270
+G027,2026-06-17,22:00,group,MD2,B,Canada,Qatar,SoFi Stadium,Los Angeles,United States,33.95,-118.34,30
+G028,2026-06-17,13:00,group,MD2,B,Switzerland,Bosnia and Herzegovina,Hard Rock Stadium,Miami,United States,25.96,-80.24,3
+G029,2026-06-18,16:00,group,MD2,C,Brazil,Haiti,MetLife Stadium,New York,United States,40.81,-74.07,5
+G030,2026-06-18,19:00,group,MD2,C,Scotland,Morocco,Lincoln Financial Field,Philadelphia,United States,39.9,-75.17,12
+G031,2026-06-19,22:00,group,MD2,D,United States,Australia,Levi's Stadium,San Francisco,United States,37.4,-121.97,9
+G032,2026-06-19,13:00,group,MD2,D,Turkey,Paraguay,Lumen Field,Seattle,United States,47.6,-122.33,15
+G033,2026-06-20,16:00,group,MD2,E,Germany,Ivory Coast,Estadio Azteca,Mexico City,Mexico,19.3,-99.15,2240
+G034,2026-06-20,19:00,group,MD2,E,Ecuador,Curacao,Estadio Akron,Guadalajara,Mexico,20.68,-103.46,1560
+G035,2026-06-16,22:00,group,MD2,F,Netherlands,Sweden,Estadio BBVA,Monterrey,Mexico,25.67,-100.31,540
+G036,2026-06-16,13:00,group,MD2,F,Tunisia,Japan,BMO Field,Toronto,Canada,43.63,-79.42,76
+G037,2026-06-17,16:00,group,MD2,G,Belgium,Iran,BC Place,Vancouver,Canada,49.28,-123.11,0
+G038,2026-06-17,19:00,group,MD2,G,New Zealand,Egypt,Mercedes-Benz Stadium,Atlanta,United States,33.75,-84.4,320
+G039,2026-06-18,22:00,group,MD2,H,Spain,Saudi Arabia,Gillette Stadium,Boston,United States,42.09,-71.26,90
+G040,2026-06-18,13:00,group,MD2,H,Uruguay,Cape Verde,AT&T Stadium,Dallas,United States,32.75,-97.09,180
+G041,2026-06-19,16:00,group,MD2,I,France,Iraq,NRG Stadium,Houston,United States,29.68,-95.41,15
+G042,2026-06-19,19:00,group,MD2,I,Norway,Senegal,Arrowhead Stadium,Kansas City,United States,39.05,-94.48,270
+G043,2026-06-20,22:00,group,MD2,J,Argentina,Austria,SoFi Stadium,Los Angeles,United States,33.95,-118.34,30
+G044,2026-06-20,13:00,group,MD2,J,Jordan,Algeria,Hard Rock Stadium,Miami,United States,25.96,-80.24,3
+G045,2026-06-16,16:00,group,MD2,K,Portugal,Uzbekistan,MetLife Stadium,New York,United States,40.81,-74.07,5
+G046,2026-06-16,19:00,group,MD2,K,Colombia,DR Congo,Lincoln Financial Field,Philadelphia,United States,39.9,-75.17,12
+G047,2026-06-17,22:00,group,MD2,L,England,Ghana,Levi's Stadium,San Francisco,United States,37.4,-121.97,9
+G048,2026-06-17,13:00,group,MD2,L,Panama,Croatia,Lumen Field,Seattle,United States,47.6,-122.33,15
+G049,2026-06-21,16:00,group,MD3,A,Czech Republic,Mexico,Estadio Azteca,Mexico City,Mexico,19.3,-99.15,2240
+G050,2026-06-21,19:00,group,MD3,A,South Africa,South Korea,Estadio Akron,Guadalajara,Mexico,20.68,-103.46,1560
+G051,2026-06-22,22:00,group,MD3,B,Switzerland,Canada,Estadio BBVA,Monterrey,Mexico,25.67,-100.31,540
+G052,2026-06-22,13:00,group,MD3,B,Bosnia and Herzegovina,Qatar,BMO Field,Toronto,Canada,43.63,-79.42,76
+G053,2026-06-23,16:00,group,MD3,C,Scotland,Brazil,BC Place,Vancouver,Canada,49.28,-123.11,0
+G054,2026-06-23,19:00,group,MD3,C,Morocco,Haiti,Mercedes-Benz Stadium,Atlanta,United States,33.75,-84.4,320
+G055,2026-06-24,22:00,group,MD3,D,Turkey,United States,Gillette Stadium,Boston,United States,42.09,-71.26,90
+G056,2026-06-24,13:00,group,MD3,D,Paraguay,Australia,AT&T Stadium,Dallas,United States,32.75,-97.09,180
+G057,2026-06-25,16:00,group,MD3,E,Ecuador,Germany,NRG Stadium,Houston,United States,29.68,-95.41,15
+G058,2026-06-25,19:00,group,MD3,E,Curacao,Ivory Coast,Arrowhead Stadium,Kansas City,United States,39.05,-94.48,270
+G059,2026-06-21,22:00,group,MD3,F,Tunisia,Netherlands,SoFi Stadium,Los Angeles,United States,33.95,-118.34,30
+G060,2026-06-21,13:00,group,MD3,F,Japan,Sweden,Hard Rock Stadium,Miami,United States,25.96,-80.24,3
+G061,2026-06-22,16:00,group,MD3,G,New Zealand,Belgium,MetLife Stadium,New York,United States,40.81,-74.07,5
+G062,2026-06-22,19:00,group,MD3,G,Egypt,Iran,Lincoln Financial Field,Philadelphia,United States,39.9,-75.17,12
+G063,2026-06-23,22:00,group,MD3,H,Uruguay,Spain,Levi's Stadium,San Francisco,United States,37.4,-121.97,9
+G064,2026-06-23,13:00,group,MD3,H,Cape Verde,Saudi Arabia,Lumen Field,Seattle,United States,47.6,-122.33,15
+G065,2026-06-24,16:00,group,MD3,I,Norway,France,Estadio Azteca,Mexico City,Mexico,19.3,-99.15,2240
+G066,2026-06-24,19:00,group,MD3,I,Senegal,Iraq,Estadio Akron,Guadalajara,Mexico,20.68,-103.46,1560
+G067,2026-06-25,22:00,group,MD3,J,Jordan,Argentina,Estadio BBVA,Monterrey,Mexico,25.67,-100.31,540
+G068,2026-06-25,13:00,group,MD3,J,Algeria,Austria,BMO Field,Toronto,Canada,43.63,-79.42,76
+G069,2026-06-21,16:00,group,MD3,K,Colombia,Portugal,BC Place,Vancouver,Canada,49.28,-123.11,0
+G070,2026-06-21,19:00,group,MD3,K,DR Congo,Uzbekistan,Mercedes-Benz Stadium,Atlanta,United States,33.75,-84.4,320
+G071,2026-06-22,22:00,group,MD3,L,Panama,England,Gillette Stadium,Boston,United States,42.09,-71.26,90
+G072,2026-06-22,13:00,group,MD3,L,Croatia,Ghana,AT&T Stadium,Dallas,United States,32.75,-97.09,180
+R3201,2026-06-28,13:00,R32,R32,,R32_SLOT_1,R32_SLOT_2,NRG Stadium,Houston,United States,29.68,-95.41,15
+R3202,2026-06-28,16:00,R32,R32,,R32_SLOT_3,R32_SLOT_4,Arrowhead Stadium,Kansas City,United States,39.05,-94.48,270
+R3203,2026-06-28,19:00,R32,R32,,R32_SLOT_5,R32_SLOT_6,SoFi Stadium,Los Angeles,United States,33.95,-118.34,30
+R3204,2026-06-28,13:00,R32,R32,,R32_SLOT_7,R32_SLOT_8,Hard Rock Stadium,Miami,United States,25.96,-80.24,3
+R3205,2026-06-29,16:00,R32,R32,,R32_SLOT_9,R32_SLOT_10,MetLife Stadium,New York,United States,40.81,-74.07,5
+R3206,2026-06-29,19:00,R32,R32,,R32_SLOT_11,R32_SLOT_12,Lincoln Financial Field,Philadelphia,United States,39.9,-75.17,12
+R3207,2026-06-29,13:00,R32,R32,,R32_SLOT_13,R32_SLOT_14,Levi's Stadium,San Francisco,United States,37.4,-121.97,9
+R3208,2026-06-29,16:00,R32,R32,,R32_SLOT_15,R32_SLOT_16,Lumen Field,Seattle,United States,47.6,-122.33,15
+R3209,2026-06-30,19:00,R32,R32,,R32_SLOT_17,R32_SLOT_18,Estadio Azteca,Mexico City,Mexico,19.3,-99.15,2240
+R3210,2026-06-30,13:00,R32,R32,,R32_SLOT_19,R32_SLOT_20,Estadio Akron,Guadalajara,Mexico,20.68,-103.46,1560
+R3211,2026-06-30,16:00,R32,R32,,R32_SLOT_21,R32_SLOT_22,Estadio BBVA,Monterrey,Mexico,25.67,-100.31,540
+R3212,2026-06-30,19:00,R32,R32,,R32_SLOT_23,R32_SLOT_24,BMO Field,Toronto,Canada,43.63,-79.42,76
+R3213,2026-07-01,13:00,R32,R32,,R32_SLOT_25,R32_SLOT_26,BC Place,Vancouver,Canada,49.28,-123.11,0
+R3214,2026-07-01,16:00,R32,R32,,R32_SLOT_27,R32_SLOT_28,Mercedes-Benz Stadium,Atlanta,United States,33.75,-84.4,320
+R3215,2026-07-01,19:00,R32,R32,,R32_SLOT_29,R32_SLOT_30,Gillette Stadium,Boston,United States,42.09,-71.26,90
+R3216,2026-07-01,13:00,R32,R32,,R32_SLOT_31,R32_SLOT_32,AT&T Stadium,Dallas,United States,32.75,-97.09,180
+R1601,2026-07-04,13:00,R16,R16,,R16_SLOT_1,R16_SLOT_2,NRG Stadium,Houston,United States,29.68,-95.41,15
+R1602,2026-07-04,16:00,R16,R16,,R16_SLOT_3,R16_SLOT_4,Arrowhead Stadium,Kansas City,United States,39.05,-94.48,270
+R1603,2026-07-04,19:00,R16,R16,,R16_SLOT_5,R16_SLOT_6,SoFi Stadium,Los Angeles,United States,33.95,-118.34,30
+R1604,2026-07-04,13:00,R16,R16,,R16_SLOT_7,R16_SLOT_8,Hard Rock Stadium,Miami,United States,25.96,-80.24,3
+R1605,2026-07-05,16:00,R16,R16,,R16_SLOT_9,R16_SLOT_10,MetLife Stadium,New York,United States,40.81,-74.07,5
+R1606,2026-07-05,19:00,R16,R16,,R16_SLOT_11,R16_SLOT_12,Lincoln Financial Field,Philadelphia,United States,39.9,-75.17,12
+R1607,2026-07-05,13:00,R16,R16,,R16_SLOT_13,R16_SLOT_14,Levi's Stadium,San Francisco,United States,37.4,-121.97,9
+R1608,2026-07-05,16:00,R16,R16,,R16_SLOT_15,R16_SLOT_16,Lumen Field,Seattle,United States,47.6,-122.33,15
+QF01,2026-07-09,13:00,QF,QF,,QF_SLOT_1,QF_SLOT_2,Estadio Azteca,Mexico City,Mexico,19.3,-99.15,2240
+QF02,2026-07-09,16:00,QF,QF,,QF_SLOT_3,QF_SLOT_4,Estadio Akron,Guadalajara,Mexico,20.68,-103.46,1560
+QF03,2026-07-09,19:00,QF,QF,,QF_SLOT_5,QF_SLOT_6,Estadio BBVA,Monterrey,Mexico,25.67,-100.31,540
+QF04,2026-07-09,13:00,QF,QF,,QF_SLOT_7,QF_SLOT_8,BMO Field,Toronto,Canada,43.63,-79.42,76
+SF01,2026-07-14,13:00,SF,SF,,SF_SLOT_1,SF_SLOT_2,BC Place,Vancouver,Canada,49.28,-123.11,0
+SF02,2026-07-14,16:00,SF,SF,,SF_SLOT_3,SF_SLOT_4,Mercedes-Benz Stadium,Atlanta,United States,33.75,-84.4,320
+3P01,2026-07-18,16:00,3P,3P,,3P_SLOT_1,3P_SLOT_2,Gillette Stadium,Boston,United States,42.09,-71.26,90
+F01,2026-07-19,16:00,F,F,,F_SLOT_1,F_SLOT_2,MetLife Stadium,New York,United States,40.81,-74.07,5
