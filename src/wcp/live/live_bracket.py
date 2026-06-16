@@ -9,9 +9,6 @@ automatically as real results come in; unresolved slots show placeholders.
 """
 from __future__ import annotations
 
-import numpy as np
-from scipy.optimize import linear_sum_assignment
-
 from .bracket_tracker import finished_knockouts
 from .tracker import third_place_race, tournament_complete_groups
 
@@ -45,17 +42,34 @@ ROUND_OF = {**{m: "Round of 32" for m in R32},
 
 
 def _assign_thirds(qualifying_groups: set[str]) -> dict[int, str]:
-    """Match the 8 qualifying third-place groups to their eligible R32 slots."""
-    slots = list(THIRD_SLOTS)
+    """Match the 8 qualifying third-place groups to their eligible R32 slots.
+
+    Pure-Python backtracking with a most-constrained-slot-first order (a perfect
+    matching is guaranteed to exist by FIFA's eligible-set design).
+    """
     groups = sorted(qualifying_groups)
     if len(groups) != 8:
         return {}
-    cost = np.ones((8, 8))
-    for si, m in enumerate(slots):
-        for gi, g in enumerate(groups):
-            cost[si, gi] = 0 if g in THIRD_SLOTS[m] else 1000
-    rows, cols = linear_sum_assignment(cost)
-    return {slots[r]: groups[c] for r, c in zip(rows, cols)}
+    # Process the slots with the fewest eligible qualifying groups first.
+    slot_order = sorted(THIRD_SLOTS, key=lambda m:
+                        sum(1 for g in groups if g in THIRD_SLOTS[m]))
+    result: dict[int, str] = {}
+    used: set[str] = set()
+
+    def solve(i: int) -> bool:
+        if i == len(slot_order):
+            return True
+        m = slot_order[i]
+        for g in groups:
+            if g not in used and g in THIRD_SLOTS[m]:
+                used.add(g); result[m] = g
+                if solve(i + 1):
+                    return True
+                used.discard(g); result.pop(m, None)
+        return False
+
+    solve(0)
+    return dict(result)
 
 
 def build(feed, groups: dict | None = None) -> dict:

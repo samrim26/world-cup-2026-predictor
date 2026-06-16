@@ -5,10 +5,6 @@ from :mod:`wcp.model.standings`, applied to the real live standings.
 """
 from __future__ import annotations
 
-import numpy as np
-
-from ..model.standings import group_sortkey
-
 N_WILDCARDS = 8        # 8 best third-placed teams advance to the Round of 32
 
 
@@ -46,21 +42,12 @@ def third_place_race(groups: dict[str, list[dict]]) -> list[dict]:
             t = dict(rows[2])      # rows are sorted by in-group rank
             t["group"] = g
             thirds.append(t)
-    if not thirds:
-        return []
-    key = group_sortkey(
-        np.array([t["Pts"] for t in thirds], dtype=float),
-        np.array([t["GD"] for t in thirds], dtype=float),
-        np.array([t["GF"] for t in thirds], dtype=float),
-    )
-    order = np.argsort(-key)
-    ranked = []
-    for pos, idx in enumerate(order):
-        t = thirds[int(idx)]
+    # FIFA criteria: points -> goal difference -> goals scored.
+    thirds.sort(key=lambda t: (t["Pts"], t["GD"], t["GF"]), reverse=True)
+    for pos, t in enumerate(thirds):
         t["wildcard_rank"] = pos + 1
         t["wildcard_status"] = "IN" if pos < N_WILDCARDS else "OUT"
-        ranked.append(t)
-    return ranked
+    return thirds
 
 
 def tournament_complete_groups(groups: dict[str, list[dict]]) -> int:

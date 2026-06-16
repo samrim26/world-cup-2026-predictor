@@ -7,9 +7,6 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
-import numpy as np
-
-from ..model.standings import group_sortkey
 from . import user_picks as up
 
 GROUP_START = date(2026, 6, 11)
@@ -98,12 +95,9 @@ def predicted_group_order() -> dict[str, list[str]]:
                 teams[a]["Pts"] += 3
             else:
                 teams[h]["Pts"] += 1; teams[a]["Pts"] += 1
-        names = list(teams)
-        key = group_sortkey(
-            np.array([teams[t]["Pts"] for t in names], float),
-            np.array([teams[t]["GF"] - teams[t]["GA"] for t in names], float),
-            np.array([teams[t]["GF"] for t in names], float))
-        order = [names[i] for i in np.argsort(-key)]
+        order = sorted(teams, key=lambda t: (teams[t]["Pts"],
+                       teams[t]["GF"] - teams[t]["GA"], teams[t]["GF"]),
+                       reverse=True)
         out[g] = [up.NAME2ABBR.get(t, t) for t in order]
     return out
 
