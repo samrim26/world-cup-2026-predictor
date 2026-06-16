@@ -12,3 +12,4 @@ outputs/*.md
 outputs/figures/*.png
 .venv/
 venv/
+.vercel

@@ -104,3 +104,19 @@ def predicted_score_by_abbrs(a: str, b: str):
             if {ph, pa} == {a, b}:
                 return ph, hs, as_
     return None
+
+
+def predicted_scoreline(home_abbr: str, away_abbr: str):
+    """Predicted score as 'home-away' aligned to this match's orientation, or None."""
+    pred = predicted_score_by_abbrs(home_abbr, away_abbr)
+    if not pred:
+        return None
+    ph, hs, as_ = pred
+    return f"{hs}-{as_}" if ph == home_abbr else f"{as_}-{hs}"
+
+
+def attach_predictions(matches: list[dict]) -> list[dict]:
+    """Add a 'predicted' scoreline field to each match dict (in place)."""
+    for m in matches:
+        m["predicted"] = predicted_scoreline(m.get("home"), m.get("away"))
+    return matches

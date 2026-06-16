@@ -32,8 +32,9 @@ def _style_wildcard(row):
 
 @st.fragment(run_every="30s")
 def live_view():
+    from wcp.live.user_picks import attach_predictions
     groups = FEED.standings()
-    today = FEED.today()
+    today = attach_predictions(FEED.today())
     flagged = qualification_flags(groups)
     thirds = third_place_race(groups)
     score = compare.score_predictions(FEED)
@@ -51,9 +52,11 @@ def live_view():
         for i, m in enumerate(today):
             tag = ("🔴 LIVE " + (m.get("clock") or "") if m["state"] == "in"
                    else "FT" if m["state"] == "post" else m.get("detail", "—"))
+            label = f"{m['home']} v {m['away']}"
+            if m.get("predicted"):
+                label += f"  ·  pred {m['predicted']}"
             cols[i % len(cols)].metric(
-                f"{m['home']} v {m['away']}",
-                f"{m['home_score']}-{m['away_score']}", tag)
+                label, f"{m['home_score']}-{m['away_score']}", tag)
     else:
         st.write("No matches scheduled today.")
 

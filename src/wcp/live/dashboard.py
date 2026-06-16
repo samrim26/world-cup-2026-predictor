@@ -30,8 +30,9 @@ def notify(title: str, message: str) -> None:
 
 
 def snapshot(feed: BaseFeed) -> dict:
+    from .user_picks import attach_predictions
     groups = feed.standings()
-    today = feed.today()
+    today = attach_predictions(feed.today())
     return {
         "groups": groups,
         "today": today,
@@ -53,7 +54,8 @@ def _live_line(m: dict) -> str:
         tag = f"{DIM}FT{RESET}"
     else:
         tag = f"{DIM}{m.get('detail','') or 'scheduled'}{RESET}"
-    return f"  {m['home']:>3} {BOLD}{sc:^5}{RESET} {m['away']:<3}  {tag}"
+    pred = f"  {DIM}(pred {m['predicted']}){RESET}" if m.get("predicted") else ""
+    return f"  {m['home']:>3} {BOLD}{sc:^5}{RESET} {m['away']:<3}  {tag}{pred}"
 
 
 def render(snap: dict, feed_src: str) -> str:

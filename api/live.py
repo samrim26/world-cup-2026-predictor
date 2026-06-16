@@ -18,12 +18,13 @@ from wcp.live.tracker import (qualification_flags, third_place_race,  # noqa: E4
 from wcp.live.bracket_tracker import goal_feed, bracket_status      # noqa: E402
 from wcp.live import compare                                        # noqa: E402
 from wcp.live.live_bracket import build as build_bracket, by_round  # noqa: E402
+from wcp.live.user_picks import attach_predictions                  # noqa: E402
 
 
 def snapshot() -> dict:
     feed = ESPNFeed()
     groups = feed.standings()
-    today = feed.today()
+    today = attach_predictions(feed.today())
     return {
         "updated": datetime.now(timezone.utc).strftime("%H:%M UTC, %b %d"),
         "source": feed.source,

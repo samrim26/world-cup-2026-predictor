@@ -69,8 +69,10 @@ function render(d){
   d.today.forEach(m=>{
     const tag = m.state==='in'?`<span class="live">🔴 LIVE ${esc(m.clock||'')}</span>`
       : m.state==='post'?`<span class="dim">FT</span>`:`<span class="dim">${esc(m.detail||'scheduled')}</span>`;
+    const pred = m.predicted?`<span class="pill" title="your prediction">pred ${esc(m.predicted)}</span>`:'';
     h += `<div class="card"><div class="dim">${esc(m.home)} v ${esc(m.away)}</div>
-      <div class="metric">${esc(m.home_score)}–${esc(m.away_score)}</div>${tag}</div>`;
+      <div class="metric">${esc(m.home_score)}–${esc(m.away_score)}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">${tag}${pred}</div></div>`;
   });
   h += `</div>`;
   if(d.goals.length){
