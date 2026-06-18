@@ -207,7 +207,9 @@ function bs3(){return '—';}
 
 function picksTab(){
   const s=DATA.score,cs=DATA.bracket_survival;
-  let h=`<h2>🎯 Predicted vs actual <span class="dim">(your pool score)</span></h2>
+  let h=`<p style="margin:4px 0 14px"><a href="https://cup.survivetheleague.com/en/league/a31b3b30-a660-4d5a-8918-4087534946d6" target="_blank" rel="noopener"
+      style="display:inline-block;background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;font-weight:600;text-decoration:none">↗ Open my league on Survive the League</a></p>
+   <h2>🎯 Predicted vs actual <span class="dim">(your pool score)</span></h2>
    <div class="card"><span class="metric">${s.total}</span> <span class="pill">/ ${s.max_possible} pts · ${s.exact} exact · ${s.correct_outcome} correct results · ${s.n} matches</span>
    <table style="margin-top:8px"><tr><th>Match</th><th>Pred</th><th>Actual</th><th>Pts</th></tr>`;
   s.rows.slice(0,30).forEach(r=>{const cl=r.points>=3?'in':(r.points===0?'dim':'');
