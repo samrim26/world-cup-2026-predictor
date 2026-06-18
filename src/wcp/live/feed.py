@@ -110,6 +110,7 @@ class ESPNFeed(BaseFeed):
             out.append({
                 "id": e.get("id"),
                 "goals": ESPNFeed._goals(comp),
+                "kickoff": e.get("date", ""),           # full ISO UTC, e.g. 2026-06-24T19:00Z
                 "date": (e.get("date", "") or "")[:10],
                 "home": home.get("team", {}).get("abbreviation", "?"),
                 "home_name": home.get("team", {}).get("displayName", "?"),

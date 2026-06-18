@@ -19,12 +19,19 @@ from wcp.live.bracket_tracker import goal_feed, bracket_status      # noqa: E402
 from wcp.live import compare                                        # noqa: E402
 from wcp.live.live_bracket import build as build_bracket, by_round  # noqa: E402
 from wcp.live.user_picks import attach_predictions                  # noqa: E402
+from wcp.live.schedule import (build_schedule, score_from_schedule,  # noqa: E402
+                               team_schedule)
+from wcp.live.advance_odds import r32_odds                          # noqa: E402
+from wcp.live.rankings import build_rankings                        # noqa: E402
 
 
 def snapshot() -> dict:
     feed = ESPNFeed()
-    groups = feed.standings()
+    groups = feed.standings()                       # fetched once, reused below
     today = attach_predictions(feed.today())
+    schedule = build_schedule(feed, groups)
+    remaining = [m for m in schedule if m["state"] == "pre"]
+    odds = r32_odds(groups, remaining)
     return {
         "updated": datetime.now(timezone.utc).strftime("%H:%M UTC, %b %d"),
         "source": feed.source,
@@ -33,10 +40,13 @@ def snapshot() -> dict:
         "goals": goal_feed(today),
         "thirds": third_place_race(groups),
         "groups": qualification_flags(groups),
-        "score": compare.score_predictions(feed),
+        "score": score_from_schedule(schedule),     # derived; no extra fetches
         "qual": compare.qualifier_accuracy(groups),
         "bracket_survival": bracket_status(feed, groups),
         "live_bracket": by_round(build_bracket(feed, groups)),
+        "schedule": schedule,
+        "advance_odds": odds,
+        "rankings": build_rankings(groups, odds),
     }
 
 
