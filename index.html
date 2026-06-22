@@ -163,20 +163,21 @@ function matchRow(m){
 }
 
 function scenariosTab(){
-  let h=`<h2>What's at stake <span class="dim">· every remaining game, what each result guarantees (mathematically clinched)</span></h2>`;
+  let h=`<h2>What's at stake <span class="dim">· every remaining game — the group table after each result &nbsp; (<span class="in">🟢 clinched a knockout spot</span> · <b class="in">bold = clinched 1st</b> · <span class="out">🔴 eliminated</span>)</span></h2>`;
   if(!DATA.scenarios.length)return h+`<p class="dim">No remaining group games.</p>`;
-  // games with implications first within each day already; show all
   DATA.scenarios.forEach(s=>{
-    const kindCls={first:'in',advance:'in',elim:'out',none:'dim'};
-    const kindStyle={first:'color:var(--yel);font-weight:600',advance:'color:var(--grn)',elim:'color:var(--red)',none:'color:var(--dim)'};
     h+=`<div class="card" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:baseline">
         <b>${tl(s.home)} v ${tl(s.away)}</b>
         <span class="dim" style="font-size:12px"><span class="gbadge">${esc(s.group)}</span> ${fmtDate(s.et_date)} · ${esc(s.et_time||'')}</span></div>
       <table style="margin-top:6px">`;
     s.outcomes.forEach(o=>{
-      const notes=o.notes.map(n=>`<span style="${kindStyle[n.kind]||''}">${esc(n.text)}</span>`).join(' &nbsp;·&nbsp; ');
-      h+=`<tr><td style="width:90px;color:var(--dim)">${esc(o.label)}</td><td>${notes}</td></tr>`;});
+      const order=o.ranking.map(r=>{
+        const cls=r.status==='elim'?'out':(r.status==='advance'||r.status==='first')?'in':'';
+        const bold=r.status==='first'?'font-weight:700':'';
+        return `<span class="${cls}" style="${bold}">${r.pos}. ${tl(r.abbr)} <small class="dim" style="color:inherit;opacity:.7">${r.pts}p</small></span>`;
+      }).join(' &nbsp; ');
+      h+=`<tr><td style="width:84px;color:var(--dim);vertical-align:top">${esc(o.label)}</td><td>${order}</td></tr>`;});
     h+=`</table></div>`;});
   return h;
 }

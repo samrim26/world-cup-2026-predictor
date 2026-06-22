@@ -55,7 +55,11 @@ def locked_positions(rows: list[dict]) -> tuple[str | None, str | None]:
 
 
 def apply_result(rows: list[dict], home: str, away: str, outcome: str) -> list[dict]:
-    """Copy of rows with one game (home vs away) played as 'H'|'D'|'A'."""
+    """Copy of rows with one game (home vs away) played as 'H'|'D'|'A'.
+
+    Uses a nominal 1-0 margin (0-0 for a draw) so tied teams order sensibly;
+    the clinch flags themselves only use points, so the margin is display-only.
+    """
     new = [dict(t) for t in rows]
     by = {t["abbr"]: t for t in new}
     h, a = by.get(home), by.get(away)
@@ -63,9 +67,9 @@ def apply_result(rows: list[dict], home: str, away: str, outcome: str) -> list[d
         return new
     h["P"] += 1; a["P"] += 1
     if outcome == "H":
-        h["Pts"] += 3
+        h["Pts"] += 3; h["GF"] += 1; h["GD"] += 1; a["GA"] += 1; a["GD"] -= 1
     elif outcome == "A":
-        a["Pts"] += 3
+        a["Pts"] += 3; a["GF"] += 1; a["GD"] += 1; h["GA"] += 1; h["GD"] -= 1
     else:
         h["Pts"] += 1; a["Pts"] += 1
     return new
@@ -74,38 +78,41 @@ def apply_result(rows: list[dict], home: str, away: str, outcome: str) -> list[d
 _NAME = {"H": "home win", "D": "draw", "A": "away win"}
 
 
+def _status(c: dict) -> str:
+    if c.get("clinched_first"):
+        return "first"
+    if c.get("clinched_advance"):
+        return "advance"
+    if c.get("out_entirely"):
+        return "elim"
+    return "none"
+
+
 def game_implications(groups: dict[str, list[dict]],
                       remaining: list[dict]) -> list[dict]:
-    """For each remaining game, what each of its 3 outcomes guarantees."""
-    by_group = {g: rows for g, rows in groups.items()}
+    """For each remaining game, the group's projected ranking after each of its
+    three outcomes, ordered by points->GD->GF, with each team's clinch status."""
     out = []
     for m in remaining:
         g = m["group"]
-        rows = by_group.get(g)
+        rows = groups.get(g)
         if not rows:
             continue
-        before = group_clinch(rows)
-        labels = {t["abbr"]: t.get("team", t["abbr"]) for t in rows}
         outcomes = []
         for oc in ("H", "D", "A"):
-            after = group_clinch(apply_result(rows, m["home"], m["away"], oc))
-            notes = []
-            for ab in (m["home"], m["away"], *(r["abbr"] for r in rows)):
-                if ab in [n["abbr"] for n in notes]:
-                    continue
-                b, a = before.get(ab, {}), after.get(ab, {})
-                if a.get("clinched_first") and not b.get("clinched_first"):
-                    notes.append({"abbr": ab, "text": f"{ab} clinches 1st", "kind": "first"})
-                elif a.get("clinched_advance") and not b.get("clinched_advance"):
-                    notes.append({"abbr": ab, "text": f"{ab} clinches a knockout spot", "kind": "advance"})
-                if a.get("eliminated") and not b.get("eliminated"):
-                    notes.append({"abbr": ab, "text": f"{ab} eliminated from top 2", "kind": "elim"})
+            after_rows = apply_result(rows, m["home"], m["away"], oc)
+            cl = group_clinch(after_rows)
+            ordered = sorted(after_rows, key=lambda t: (t["Pts"], t["GD"], t["GF"]),
+                             reverse=True)
+            ranking = [{
+                "pos": i + 1, "abbr": t["abbr"], "name": t.get("team", t["abbr"]),
+                "pts": t["Pts"], "gd": t["GD"],
+                "status": _status(cl.get(t["abbr"], {})),
+            } for i, t in enumerate(ordered)]
             who = m["home"] if oc == "H" else (m["away"] if oc == "A" else "")
-            outcomes.append({
-                "outcome": oc,
-                "label": f"{who} win" if who else "draw",
-                "notes": notes or [{"abbr": "", "text": "nothing decided — group stays open", "kind": "none"}],
-            })
+            outcomes.append({"outcome": oc,
+                             "label": f"{who} win" if who else "draw",
+                             "ranking": ranking})
         out.append({
             "group": g, "home": m["home"], "away": m["away"],
             "home_name": m.get("home_name", m["home"]), "away_name": m.get("away_name", m["away"]),
