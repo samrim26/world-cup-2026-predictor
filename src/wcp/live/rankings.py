@@ -5,11 +5,12 @@ from .advance_odds import ABBR_ELO
 from .clinch import group_clinch
 
 
-def build_rankings(groups: dict[str, list[dict]],
-                   odds: dict[str, float]) -> list[dict]:
+def build_rankings(groups: dict[str, list[dict]], odds: dict[str, float],
+                   remaining_by_group: dict | None = None) -> list[dict]:
+    remaining_by_group = remaining_by_group or {}
     rows = []
     for g, teams in groups.items():
-        cl = group_clinch(teams)
+        cl = group_clinch(teams, remaining_by_group.get(g, []))
         for t in teams:
             ab = t["abbr"]
             c = cl.get(ab, {})

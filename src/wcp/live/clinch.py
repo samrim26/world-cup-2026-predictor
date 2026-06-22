@@ -8,49 +8,67 @@ and the early bracket locking.
 """
 from __future__ import annotations
 
-
-def _maxpts(t: dict) -> int:
-    return t["Pts"] + 3 * (3 - t["P"])          # current pts + 3 per game left
+from itertools import product
 
 
-def group_clinch(rows: list[dict]) -> dict[str, dict]:
-    """Per-team clinch flags for one group's standings rows."""
-    out = {}
-    for a in rows:
-        ab = a["abbr"]
-        rivals = [r for r in rows if r["abbr"] != ab]
-        # Worst case for A: A gains nothing (floor = A.Pts), rivals max out.
-        clinched_first = all(a["Pts"] > _maxpts(r) for r in rivals)
-        could_reach_a = sum(1 for r in rivals if _maxpts(r) >= a["Pts"])
-        clinched_advance = could_reach_a <= 1           # at most one team above A
-        above_for_sure = sum(1 for r in rivals if r["Pts"] > _maxpts(a))
-        out[ab] = {
-            "clinched_first": clinched_first,
-            "clinched_advance": clinched_advance,
-            "eliminated": above_for_sure >= 2,          # cannot reach top 2
-            "out_entirely": above_for_sure >= 3,        # cannot even reach 3rd
-        }
-    return out
+def _final_points(rows: list[dict], remaining: list[tuple[str, str]]):
+    """Yield {abbr: final_points} for every win/draw/loss combination of the
+    remaining games — so head-to-head structure (e.g. two rivals playing each
+    other) is handled exactly, not double-counted."""
+    base = {t["abbr"]: t["Pts"] for t in rows}
+    for combo in product("HDA", repeat=len(remaining)):
+        pts = dict(base)
+        for (h, a), oc in zip(remaining, combo):
+            if oc == "H":
+                pts[h] += 3
+            elif oc == "A":
+                pts[a] += 3
+            else:
+                pts[h] += 1; pts[a] += 1
+        yield pts
 
 
-def locked_positions(rows: list[dict]) -> tuple[str | None, str | None]:
+def group_clinch(rows: list[dict],
+                 remaining: list[tuple[str, str]] | None = None) -> dict[str, dict]:
+    """Per-team clinch flags via exact enumeration of the group's remaining games.
+
+    A flag is True only when it holds in *every* possible remaining-results
+    scenario (still conservative on goal-difference-only ties — points only —
+    but exact on the head-to-head structure).
+    """
+    remaining = remaining or []
+    abbrs = [t["abbr"] for t in rows]
+    worst_at_or_above = {ab: 0 for ab in abbrs}     # max over scenarios
+    best_strictly_above = {ab: 99 for ab in abbrs}  # min over scenarios
+    for pts in _final_points(rows, remaining):
+        for ab in abbrs:
+            above = sum(1 for o in abbrs if o != ab and pts[o] > pts[ab])
+            tie = sum(1 for o in abbrs if o != ab and pts[o] == pts[ab])
+            worst_at_or_above[ab] = max(worst_at_or_above[ab], above + tie)
+            best_strictly_above[ab] = min(best_strictly_above[ab], above)
+    return {ab: {
+        "clinched_first": worst_at_or_above[ab] == 0,     # always strictly top
+        "clinched_advance": worst_at_or_above[ab] <= 1,   # always top 2
+        "eliminated": best_strictly_above[ab] >= 2,       # never reaches top 2
+        "out_entirely": best_strictly_above[ab] >= 3,     # never reaches top 3
+    } for ab in abbrs}
+
+
+def locked_positions(rows: list[dict],
+                     remaining: list[tuple[str, str]] | None = None
+                     ) -> tuple[str | None, str | None]:
     """(team locked into 1st, team locked into 2nd) for the bracket, or None."""
     if not rows:
         return None, None
-    complete = all(t["P"] >= 3 for t in rows)
-    if complete:
+    if all(t["P"] >= 3 for t in rows):              # group complete
         return rows[0]["abbr"], (rows[1]["abbr"] if len(rows) > 1 else None)
-    cl = group_clinch(rows)
-    first = next((t["abbr"] for t in rows if cl[t["abbr"]]["clinched_first"]), None)
+    cl = group_clinch(rows, remaining)
+    first = next((ab for ab in cl if cl[ab]["clinched_first"]), None)
+    # If 1st is locked, the (unique) other team that has clinched top-2 is 2nd.
     second = None
     if first:
-        for b in rows:
-            if b["abbr"] == first:
-                continue
-            others = [r for r in rows if r["abbr"] not in (first, b["abbr"])]
-            if cl[b["abbr"]]["clinched_advance"] and all(b["Pts"] > _maxpts(r) for r in others):
-                second = b["abbr"]
-                break
+        second = next((ab for ab in cl
+                       if ab != first and cl[ab]["clinched_advance"]), None)
     return first, second
 
 
@@ -92,16 +110,21 @@ def game_implications(groups: dict[str, list[dict]],
                       remaining: list[dict]) -> list[dict]:
     """For each remaining game, the group's projected ranking after each of its
     three outcomes, ordered by points->GD->GF, with each team's clinch status."""
+    rem_by_group: dict[str, list[tuple[str, str]]] = {}
+    for m in remaining:
+        rem_by_group.setdefault(m["group"], []).append((m["home"], m["away"]))
     out = []
     for m in remaining:
         g = m["group"]
         rows = groups.get(g)
         if not rows:
             continue
+        # The other games still open in this group after this one is played.
+        others = [pr for pr in rem_by_group[g] if pr != (m["home"], m["away"])]
         outcomes = []
         for oc in ("H", "D", "A"):
             after_rows = apply_result(rows, m["home"], m["away"], oc)
-            cl = group_clinch(after_rows)
+            cl = group_clinch(after_rows, others)
             ordered = sorted(after_rows, key=lambda t: (t["Pts"], t["GD"], t["GF"]),
                              reverse=True)
             ranking = [{

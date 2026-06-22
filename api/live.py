@@ -32,8 +32,12 @@ def snapshot() -> dict:
     today = attach_predictions(feed.today())
     schedule = build_schedule(feed, groups)
     remaining = [m for m in schedule if m["state"] == "pre"]
+    rem_by_group = {}
+    for m in remaining:
+        rem_by_group.setdefault(m["group"], []).append((m["home"], m["away"]))
     odds = r32_odds(groups, remaining)
-    locked = {g: clinch.locked_positions(rows) for g, rows in groups.items()}
+    locked = {g: clinch.locked_positions(rows, rem_by_group.get(g, []))
+              for g, rows in groups.items()}
     return {
         "updated": datetime.now(timezone.utc).strftime("%H:%M UTC, %b %d"),
         "source": feed.source,
@@ -48,7 +52,7 @@ def snapshot() -> dict:
         "live_bracket": by_round(build_bracket(feed, groups, locked)),
         "schedule": schedule,
         "advance_odds": odds,
-        "rankings": build_rankings(groups, odds),
+        "rankings": build_rankings(groups, odds, rem_by_group),
         "scenarios": clinch.game_implications(groups, remaining),
     }
 
