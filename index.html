@@ -54,6 +54,11 @@
   /* rankings bar */
   .bar{height:8px;background:#1d2740;border-radius:4px;overflow:hidden;min-width:60px}
   .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--cyan))}
+  /* filter chips */
+  .chips{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 12px}
+  .chips button{background:var(--card);border:1px solid var(--line);color:var(--dim);font:inherit;
+    font-weight:600;padding:4px 11px;border-radius:14px;cursor:pointer}
+  .chips button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
   /* bracket */
   .bk{display:flex;align-items:stretch;gap:6px;overflow-x:auto;padding:6px 0}
   .side{display:flex;flex:1}
@@ -162,10 +167,36 @@ function matchRow(m){
     <div class="predbox">${pred}</div></div>`;
 }
 
+let scenFilter='All';
+function setScenFilter(g){scenFilter=g;body();}
 function scenariosTab(){
-  let h=`<h2>What's at stake <span class="dim">· every remaining game — the group table after each result &nbsp; (<span class="in">🟢 clinched a knockout spot</span> · <b class="in">bold = clinched 1st</b> · <span class="out">🔴 eliminated</span>)</span></h2>`;
-  if(!DATA.scenarios.length)return h+`<p class="dim">No remaining group games.</p>`;
-  DATA.scenarios.forEach(s=>{
+  /* ---- cross-group 3rd-place wildcard watch ---- */
+  let h=`<h2>🟡 Wildcard watch <span class="dim">· 3rd-place race, top 8 advance · games that can move the cutoff line below</span></h2>
+    <div class="card"><table><tr><th>#</th><th>Team</th><th>Grp</th><th>Pts</th><th>GD</th><th>GF</th><th></th></tr>`;
+  DATA.thirds.forEach(t=>{const cl=t.wildcard_status==='IN'?'in':'out';
+    if(t.wildcard_rank===9)h+=`<tr><td colspan="7" style="border-top:2px dashed var(--red);height:2px;padding:0"></td></tr>`;
+    h+=`<tr class="${cl}"><td>${t.wildcard_rank}</td><td>${tl(t.abbr)} <span class="dim">${esc(t.team)}</span></td><td>${esc(t.group)}</td>
+      <td>${t.Pts}</td><td>${t.GD>=0?'+':''}${t.GD}</td><td>${t.GF}</td><td>${t.wildcard_status}</td></tr>`;});
+  h+=`</table>`;
+  if(DATA.wildcard_swings&&DATA.wildcard_swings.length){
+    h+=`<div style="margin-top:8px;font-size:12px"><b class="dim">Games that move the cutoff line</b>`;
+    DATA.wildcard_swings.forEach(s=>{
+      const notes=s.outcomes.map(o=>{
+        const parts=o.dropped.map(a=>`<span class="out">${esc(a)} OUT</span>`)
+          .concat(o.entered.map(a=>`<span class="in">${esc(a)} IN</span>`)).join(', ');
+        return `<b>${esc(o.label)}</b> → ${parts}`;}).join(' &nbsp;·&nbsp; ');
+      h+=`<div style="padding:3px 0;border-top:1px solid #182135">${tl(s.home)} v ${tl(s.away)} <span class="gbadge">${esc(s.group)}</span> &nbsp;${notes}</div>`;});
+    h+=`</div>`;
+  }
+  h+=`</div>`;
+  /* ---- per-game group-table scenarios, filterable by group ---- */
+  h+=`<h2>What's at stake <span class="dim">· every remaining game — the group table after each result &nbsp; (<span class="in">🟢 knockout spot</span> · <b class="in">bold = 1st</b> · <span class="out">🔴 eliminated</span>)</span></h2>`;
+  const grps=[...new Set(DATA.scenarios.map(s=>s.group))].sort();
+  h+=`<div class="chips"><button class="${scenFilter==='All'?'on':''}" onclick="setScenFilter('All')">All</button>`+
+     grps.map(g=>`<button class="${scenFilter===g?'on':''}" onclick="setScenFilter('${g}')">${g}</button>`).join('')+`</div>`;
+  const games=DATA.scenarios.filter(s=>scenFilter==='All'||s.group===scenFilter);
+  if(!games.length)return h+`<p class="dim">No remaining group games.</p>`;
+  games.forEach(s=>{
     h+=`<div class="card" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:baseline">
         <b>${tl(s.home)} v ${tl(s.away)}</b>
@@ -194,18 +225,17 @@ function standingsTab(){
 }
 
 function rankingsTab(){
-  let h=`<h2>Full 48-team ranking <span class="dim">· ordered by live odds to reach the Round of 32 (model estimate)</span></h2>
+  let h=`<h2>Full 48-team ranking <span class="dim">· ordered as a league table (Pts → GD → GF)</span></h2>
     <div style="margin-bottom:8px;font-size:12px">
       <span class="clinch-1">🥇 clinched 1st in group</span> &nbsp;
       <span class="clinch-q">✅ clinched a knockout spot</span> &nbsp;
       <span class="dim">○ in contention</span> &nbsp; <span class="out">✕ eliminated</span></div>
-    <div class="card"><table><tr><th></th><th>#</th><th>Team</th><th>Grp</th><th>P</th><th>W-D-L</th><th>GD</th><th>Pts</th><th>R32 odds</th></tr>`;
-  DATA.rankings.forEach(r=>{const pct=Math.round(r.r32_odds*100);
+    <div class="card"><table><tr><th></th><th>#</th><th>Team</th><th>Grp</th><th>P</th><th>W-D-L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr>`;
+  DATA.rankings.forEach(r=>{
     const badge=r.clinched_first?'<span class="clinch-1">🥇</span>':r.clinched_advance?'<span class="clinch-q">✅</span>':r.eliminated?'<span class="out">✕</span>':'';
     const cls=r.clinched_first?'row-1':r.clinched_advance?'row-q':r.eliminated?'row-out':'';
     h+=`<tr class="${cls}"><td>${badge}</td><td>${r.rank}</td><td>${tl(r.abbr)} <span class="dim">${esc(r.name)}</span></td><td>${esc(r.group)}</td>
-      <td>${r.P}</td><td>${r.W}-${r.D}-${r.L}</td><td>${r.GD>=0?'+':''}${r.GD}</td><td>${r.Pts}</td>
-      <td><div style="display:flex;align-items:center;gap:8px"><div class="bar"><i style="width:${pct}%"></i></div><span style="width:34px">${pct}%</span></div></td></tr>`;});
+      <td>${r.P}</td><td>${r.W}-${r.D}-${r.L}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD>=0?'+':''}${r.GD}</td><td>${r.Pts}</td></tr>`;});
   return h+`</table></div>`;
 }
 
@@ -227,7 +257,31 @@ function bracketTab(){
     </div>
     <div class="side right">${col(R_SF)}${col(R_QF)}${col(R_R16)}${col(R_R32)}</div>
    </div>
-   <p class="dim" style="font-size:11px;margin-top:10px">Winners advance automatically as results come in. Scroll horizontally on small screens.</p>`;
+   <p class="dim" style="font-size:11px;margin-top:10px">Winners advance automatically as results come in. Scroll horizontally on small screens.</p>
+   ${picksBracket()}`;
+}
+/* the user's own predicted bracket (static) */
+function pBkM(m){if(!m)return '<div class="m dim">—</div>';
+  const side=t=>t===m.winner?`<b class="win">${esc(t)}</b>`:tl(t);
+  return `<div class="m"><div>${side(m.a)}</div><div>${side(m.b)}</div></div>`;}
+function pCol(ms){let h='';for(let i=0;i<ms.length;i+=2){
+    h+=`<div class="pair">${ms.slice(i,i+2).map(pBkM).join('')}</div>`;}return `<div class="col">${h}</div>`;}
+function picksBracket(){
+  const pb=DATA.picks_bracket;if(!pb)return '';
+  const R=pb.rounds,half=a=>[a.slice(0,a.length/2),a.slice(a.length/2)];
+  const[l32,r32]=half(R['Round of 32']),[l16,r16]=half(R['Round of 16']);
+  const[lqf,rqf]=half(R['Quarterfinals']),[lsf,rsf]=half(R['Semifinals']);
+  const fin=R['Final'][0],fs=t=>t===fin.winner?`<b class="win">${esc(t)}</b>`:tl(t);
+  return `<h2 style="margin-top:28px">🗺️ My predicted bracket <span class="dim">· champion <b class="win">${esc(pb.champion)}</b> · runner-up ${esc(pb.runner_up)} · 3rd ${esc(pb.third)}</span></h2>
+   <div class="bk">
+    <div class="side left">${pCol(l32)}${pCol(l16)}${pCol(lqf)}${pCol(lsf)}</div>
+    <div class="center">
+      <div class="roundlbl">Final</div>
+      <div class="final"><div class="lbl">Final</div><div class="m">${fs(fin.a)}<br><span class="dim">v</span><br>${fs(fin.b)}</div></div>
+    </div>
+    <div class="side right">${pCol(rsf)}${pCol(rqf)}${pCol(r16)}${pCol(r32)}</div>
+   </div>
+   <p class="dim" style="font-size:11px;margin-top:10px">Your locked-in picks (green = your predicted winner). Scroll horizontally on small screens.</p>`;
 }
 function bkSide(m,which){if(!m)return '';const team=m[which+'_team'],lbl=m[which];
   if(m.winner&&team===m.winner)return `<b class="win">${esc(lbl)}</b>`;

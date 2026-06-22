@@ -14,7 +14,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from wcp.live.feed import ESPNFeed                                  # noqa: E402
 from wcp.live.tracker import (qualification_flags, third_place_race,  # noqa: E402
-                              tournament_complete_groups)
+                              tournament_complete_groups, wildcard_swings)
+from wcp.live import user_picks                                     # noqa: E402
 from wcp.live.bracket_tracker import goal_feed, bracket_status      # noqa: E402
 from wcp.live import compare                                        # noqa: E402
 from wcp.live.live_bracket import build as build_bracket, by_round  # noqa: E402
@@ -54,6 +55,8 @@ def snapshot() -> dict:
         "advance_odds": odds,
         "rankings": build_rankings(groups, odds, rem_by_group),
         "scenarios": clinch.game_implications(groups, remaining),
+        "wildcard_swings": wildcard_swings(groups, remaining),
+        "picks_bracket": user_picks.predicted_bracket(),
     }
 
 

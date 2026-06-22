@@ -24,8 +24,8 @@ def build_rankings(groups: dict[str, list[dict]], odds: dict[str, float],
                 "clinched_advance": c.get("clinched_advance", False),
                 "eliminated": c.get("out_entirely", False),
             })
-    # Rank by R32 odds, then points, GD, Elo as stable tiebreaks.
-    rows.sort(key=lambda r: (r["r32_odds"], r["Pts"], r["GD"], r["elo"]),
+    # Rank as a single league table: points -> GD -> GF, Elo as a stable tiebreak.
+    rows.sort(key=lambda r: (r["Pts"], r["GD"], r["GF"], r["elo"]),
               reverse=True)
     for i, r in enumerate(rows, 1):
         r["rank"] = i

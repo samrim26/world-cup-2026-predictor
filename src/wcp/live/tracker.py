@@ -50,6 +50,57 @@ def third_place_race(groups: dict[str, list[dict]]) -> list[dict]:
     return thirds
 
 
+def _wildcard_in_set(groups: dict[str, list[dict]]) -> set[str]:
+    """Abbrs of the third-placed teams currently holding a top-8 wildcard."""
+    return {t["abbr"] for t in third_place_race(groups)
+            if t["wildcard_status"] == "IN"}
+
+
+def wildcard_swings(groups: dict[str, list[dict]],
+                    remaining: list[dict]) -> list[dict]:
+    """Which upcoming games can move a team across the top-8 wildcard line.
+
+    For every remaining game and each of its three outcomes, project that one
+    result onto its group (re-sorted by the FIFA tiebreak), recompute the
+    cross-group third-place race, and report any change in the IN (top-8) set.
+    Only games with at least one membership-changing outcome are returned.
+    """
+    from .clinch import apply_result            # local import: avoid cycle
+
+    base_in = _wildcard_in_set(groups)
+    out = []
+    for m in remaining:
+        g = m.get("group")
+        rows = groups.get(g)
+        if not rows:
+            continue
+        swung = []
+        for oc in ("H", "D", "A"):
+            new_rows = sorted(apply_result(rows, m["home"], m["away"], oc),
+                              key=lambda t: (t["Pts"], t["GD"], t["GF"]),
+                              reverse=True)
+            projected = dict(groups)
+            projected[g] = new_rows
+            new_in = _wildcard_in_set(projected)
+            entered = sorted(new_in - base_in)
+            dropped = sorted(base_in - new_in)
+            if entered or dropped:
+                who = m["home"] if oc == "H" else (m["away"] if oc == "A" else "")
+                swung.append({"outcome": oc,
+                              "label": f"{who} win" if who else "draw",
+                              "entered": entered, "dropped": dropped})
+        if swung:
+            out.append({
+                "group": g, "home": m["home"], "away": m["away"],
+                "home_name": m.get("home_name", m["home"]),
+                "away_name": m.get("away_name", m["away"]),
+                "et_date": m.get("et_date", ""), "et_time": m.get("et_time", ""),
+                "kickoff": m.get("kickoff", ""), "outcomes": swung,
+            })
+    out.sort(key=lambda x: (x["kickoff"] or "9", x["group"]))
+    return out
+
+
 def tournament_complete_groups(groups: dict[str, list[dict]]) -> int:
     """How many groups have every team on 3 games played (group stage done)."""
     done = 0

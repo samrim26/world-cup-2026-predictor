@@ -95,6 +95,27 @@ def predicted_rounds() -> dict[str, list[str]]:
     }
 
 
+_KO_ROUNDS = ["Round of 32", "Round of 16", "Quarterfinals", "Semifinals", "Final"]
+
+
+def predicted_bracket() -> dict:
+    """The user's full predicted knockout bracket, abbreviations, for rendering.
+
+    Returns ``{rounds: {round: [{a, b, winner}]}, champion, runner_up, third}``.
+    The rounds chain cleanly: each round's winners are the next round's entrants
+    (in order), so the frontend can draw it as a self-contained tree.
+    """
+    ab = lambda n: NAME2ABBR.get(n, n)
+    rounds = {r: [{"a": ab(h), "b": ab(a), "winner": ab(w)}
+                  for h, a, w in KO_MATCHES[r]] for r in _KO_ROUNDS}
+    return {
+        "rounds": rounds,
+        "champion": ab(CHAMPION),
+        "runner_up": ab(RUNNER_UP),
+        "third": ab(THIRD),
+    }
+
+
 def predicted_score_by_abbrs(a: str, b: str):
     """Return (home_abbr, home_goals, away_goals) for the user's prediction of the
     match between abbreviations a and b, or None if not found."""
