@@ -172,15 +172,8 @@ function matchRow(m){
 let scenFilter='All';
 function setScenFilter(g){scenFilter=g;body();}
 function scenariosTab(){
-  /* ---- cross-group 3rd-place wildcard watch ---- */
-  let h=`<h2>🟡 Wildcard watch <span class="dim">· 3rd-place race, top 8 advance · per-game impact is shown in What's at stake below</span></h2>
-    <div class="card"><table><tr><th>#</th><th>Team</th><th>Grp</th><th>Pts</th><th>GD</th><th>GF</th><th></th></tr>`;
-  DATA.thirds.forEach(t=>{const cl=t.wildcard_status==='IN'?'in':'out';
-    if(t.wildcard_rank===9)h+=`<tr><td colspan="7" style="border-top:2px dashed var(--red);height:2px;padding:0"></td></tr>`;
-    h+=`<tr class="${cl}"><td>${t.wildcard_rank}</td><td>${tl(t.abbr)} <span class="dim">${esc(t.team)}</span></td><td>${esc(t.group)}</td>
-      <td>${t.Pts}</td><td>${t.GD>=0?'+':''}${t.GD}</td><td>${t.GF}</td><td>${t.wildcard_status}</td></tr>`;});
-  h+=`</table></div>`;
   /* ---- per-game group-table scenarios, filterable by group / wildcard movers ---- */
+  let h='';
   // index the wildcard line-movers by game (+ outcome) so each card is self-contained
   const swing={}, movers=new Set();
   (DATA.wildcard_swings||[]).forEach(s=>{const key=`${s.group}|${s.home}|${s.away}`;movers.add(key);
