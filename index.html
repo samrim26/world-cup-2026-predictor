@@ -310,8 +310,7 @@ function openTeam(ab){
   const rk=DATA.rankings.find(r=>r.abbr===ab);if(!rk)return;
   const games=DATA.schedule.filter(m=>m.home===ab||m.away===ab);
   let h=`<span class="x" onclick="closeModal()">×</span><h3>${esc(rk.name)} <span class="dim">(${esc(ab)} · Group ${esc(rk.group)})</span></h3>
-    <div class="dim" style="margin-bottom:10px">${rk.P} played · ${rk.W}-${rk.D}-${rk.L} · ${rk.Pts} pts · GD ${rk.GD>=0?'+':''}${rk.GD}
-      · <b class="${rk.r32_odds>=.5?'in':'out'}">${Math.round(rk.r32_odds*100)}%</b> to reach Round of 32</div>
+    <div class="dim" style="margin-bottom:10px">${rk.P} played · ${rk.W}-${rk.D}-${rk.L} · ${rk.Pts} pts · GD ${rk.GD>=0?'+':''}${rk.GD}</div>
     <table>`;
   games.forEach(m=>{const opp=m.home===ab?m.away:m.home,homeAway=m.home===ab?'vs':'@';
     const done=m.state==='post',live=m.state==='in';
