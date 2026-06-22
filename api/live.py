@@ -23,6 +23,7 @@ from wcp.live.schedule import (build_schedule, score_from_schedule,  # noqa: E40
                                team_schedule)
 from wcp.live.advance_odds import r32_odds                          # noqa: E402
 from wcp.live.rankings import build_rankings                        # noqa: E402
+from wcp.live import clinch                                         # noqa: E402
 
 
 def snapshot() -> dict:
@@ -32,6 +33,7 @@ def snapshot() -> dict:
     schedule = build_schedule(feed, groups)
     remaining = [m for m in schedule if m["state"] == "pre"]
     odds = r32_odds(groups, remaining)
+    locked = {g: clinch.locked_positions(rows) for g, rows in groups.items()}
     return {
         "updated": datetime.now(timezone.utc).strftime("%H:%M UTC, %b %d"),
         "source": feed.source,
@@ -43,10 +45,11 @@ def snapshot() -> dict:
         "score": score_from_schedule(schedule),     # derived; no extra fetches
         "qual": compare.qualifier_accuracy(groups),
         "bracket_survival": bracket_status(feed, groups),
-        "live_bracket": by_round(build_bracket(feed, groups)),
+        "live_bracket": by_round(build_bracket(feed, groups, locked)),
         "schedule": schedule,
         "advance_odds": odds,
         "rankings": build_rankings(groups, odds),
+        "scenarios": clinch.game_implications(groups, remaining),
     }
 
 

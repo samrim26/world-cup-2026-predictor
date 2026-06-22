@@ -72,8 +72,12 @@ def _assign_thirds(qualifying_groups: set[str]) -> dict[int, str]:
     return dict(result)
 
 
-def build(feed, groups: dict | None = None) -> dict:
+def build(feed, groups: dict | None = None, locked: dict | None = None) -> dict:
+    """``locked`` maps group letter -> (first_abbr|None, second_abbr|None): teams
+    mathematically clinched into 1st/2nd, used to fill R32 slots before the group
+    is even complete."""
     groups = groups or feed.standings()
+    locked = locked or {}
     all_done = tournament_complete_groups(groups) == 12
 
     # Per-group winner/runner/third (current order) + whether the group is final.
@@ -99,10 +103,15 @@ def build(feed, groups: dict | None = None) -> dict:
     def slot(spec):
         """Return (team_abbr_or_None, label, is_final)."""
         kind, key = spec
+        lk = locked.get(key) or (None, None)
         if kind == "W":
+            if lk[0]:                                    # 1st mathematically clinched
+                return lk[0], lk[0], True
             return win[key], (win[key] if decided[key]
                               else f"{win[key]}?" if win[key] else f"1{key}"), decided[key]
         if kind == "R":
+            if lk[1]:                                    # 2nd mathematically clinched
+                return lk[1], lk[1], True
             return run[key], (run[key] if decided[key]
                               else f"{run[key]}?" if run[key] else f"2{key}"), decided[key]
         # third-place slot

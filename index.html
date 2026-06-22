@@ -46,6 +46,11 @@
   .mscore{font-weight:700;font-variant-numeric:tabular-nums}
   .predbox{text-align:right;color:var(--dim);font-size:12px;min-width:120px}
   .pts{display:inline-block;margin-left:6px;border-radius:5px;padding:0 5px;font-weight:700;font-size:11px}
+  /* clinch highlights */
+  .clinch-1{color:var(--yel);font-weight:600} .clinch-q{color:var(--grn);font-weight:600}
+  tr.row-1 td{background:rgba(241,196,15,.10)} tr.row-1 td:nth-child(3){box-shadow:inset 3px 0 var(--yel)}
+  tr.row-q td{background:rgba(46,204,113,.09)} tr.row-q td:nth-child(3){box-shadow:inset 3px 0 var(--grn)}
+  tr.row-out td{opacity:.5}
   /* rankings bar */
   .bar{height:8px;background:#1d2740;border-radius:4px;overflow:hidden;min-width:60px}
   .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--cyan))}
@@ -89,7 +94,7 @@
 <div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()"><div class="modal" id="modal"></div></div>
 
 <script>
-const TABS=[['live','🔴 Live'],['matches','📅 Matches'],['standings','📊 Standings'],
+const TABS=[['live','🔴 Live'],['matches','📅 Matches'],['scenarios','🔮 Scenarios'],['standings','📊 Standings'],
             ['rankings','🏅 Rankings'],['bracket','🏆 Bracket'],['picks','🎯 My Picks']];
 let DATA=null, TAB='live';
 const esc=s=>String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
@@ -109,7 +114,7 @@ function meta(){
 /* ---------- TABS ---------- */
 function body(){
   if(!DATA){return}
-  const f={live:liveTab,matches:matchesTab,standings:standingsTab,rankings:rankingsTab,bracket:bracketTab,picks:picksTab}[TAB];
+  const f={live:liveTab,matches:matchesTab,scenarios:scenariosTab,standings:standingsTab,rankings:rankingsTab,bracket:bracketTab,picks:picksTab}[TAB];
   document.getElementById('app').innerHTML=f();
 }
 
@@ -157,6 +162,25 @@ function matchRow(m){
     <div class="predbox">${pred}</div></div>`;
 }
 
+function scenariosTab(){
+  let h=`<h2>What's at stake <span class="dim">· every remaining game, what each result guarantees (mathematically clinched)</span></h2>`;
+  if(!DATA.scenarios.length)return h+`<p class="dim">No remaining group games.</p>`;
+  // games with implications first within each day already; show all
+  DATA.scenarios.forEach(s=>{
+    const kindCls={first:'in',advance:'in',elim:'out',none:'dim'};
+    const kindStyle={first:'color:var(--yel);font-weight:600',advance:'color:var(--grn)',elim:'color:var(--red)',none:'color:var(--dim)'};
+    h+=`<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <b>${tl(s.home)} v ${tl(s.away)}</b>
+        <span class="dim" style="font-size:12px"><span class="gbadge">${esc(s.group)}</span> ${fmtDate(s.et_date)} · ${esc(s.et_time||'')}</span></div>
+      <table style="margin-top:6px">`;
+    s.outcomes.forEach(o=>{
+      const notes=o.notes.map(n=>`<span style="${kindStyle[n.kind]||''}">${esc(n.text)}</span>`).join(' &nbsp;·&nbsp; ');
+      h+=`<tr><td style="width:90px;color:var(--dim)">${esc(o.label)}</td><td>${notes}</td></tr>`;});
+    h+=`</table></div>`;});
+  return h;
+}
+
 function standingsTab(){
   let h=`<h2>Group standings <span class="dim">(green = top 2, yellow = wildcard spot)</span></h2><div class="grid groups">`;
   Object.entries(DATA.groups).forEach(([g,rows])=>{
@@ -170,9 +194,15 @@ function standingsTab(){
 
 function rankingsTab(){
   let h=`<h2>Full 48-team ranking <span class="dim">· ordered by live odds to reach the Round of 32 (model estimate)</span></h2>
-    <div class="card"><table><tr><th>#</th><th>Team</th><th>Grp</th><th>P</th><th>W-D-L</th><th>GD</th><th>Pts</th><th>R32 odds</th></tr>`;
+    <div style="margin-bottom:8px;font-size:12px">
+      <span class="clinch-1">🥇 clinched 1st in group</span> &nbsp;
+      <span class="clinch-q">✅ clinched a knockout spot</span> &nbsp;
+      <span class="dim">○ in contention</span> &nbsp; <span class="out">✕ eliminated</span></div>
+    <div class="card"><table><tr><th></th><th>#</th><th>Team</th><th>Grp</th><th>P</th><th>W-D-L</th><th>GD</th><th>Pts</th><th>R32 odds</th></tr>`;
   DATA.rankings.forEach(r=>{const pct=Math.round(r.r32_odds*100);
-    h+=`<tr><td>${r.rank}</td><td>${tl(r.abbr)} <span class="dim">${esc(r.name)}</span></td><td>${esc(r.group)}</td>
+    const badge=r.clinched_first?'<span class="clinch-1">🥇</span>':r.clinched_advance?'<span class="clinch-q">✅</span>':r.eliminated?'<span class="out">✕</span>':'';
+    const cls=r.clinched_first?'row-1':r.clinched_advance?'row-q':r.eliminated?'row-out':'';
+    h+=`<tr class="${cls}"><td>${badge}</td><td>${r.rank}</td><td>${tl(r.abbr)} <span class="dim">${esc(r.name)}</span></td><td>${esc(r.group)}</td>
       <td>${r.P}</td><td>${r.W}-${r.D}-${r.L}</td><td>${r.GD>=0?'+':''}${r.GD}</td><td>${r.Pts}</td>
       <td><div style="display:flex;align-items:center;gap:8px"><div class="bar"><i style="width:${pct}%"></i></div><span style="width:34px">${pct}%</span></div></td></tr>`;});
   return h+`</table></div>`;
