@@ -50,24 +50,30 @@ def third_place_race(groups: dict[str, list[dict]]) -> list[dict]:
     return thirds
 
 
-def _wildcard_in_set(groups: dict[str, list[dict]]) -> set[str]:
-    """Abbrs of the third-placed teams currently holding a top-8 wildcard."""
-    return {t["abbr"] for t in third_place_race(groups)
+def advancement_set(groups: dict[str, list[dict]]) -> set[str]:
+    """Abbrs of teams that would reach the Round of 32 on current standings:
+    each group's top two, plus the eight best third-placed teams.
+
+    Used so a third-placed team that gets *promoted* to a top-two spot still
+    counts as advancing (it doesn't look like it dropped out of the wildcard)."""
+    adv = {t["abbr"] for rows in groups.values() for t in rows[:2]}
+    adv |= {t["abbr"] for t in third_place_race(groups)
             if t["wildcard_status"] == "IN"}
+    return adv
 
 
 def wildcard_swings(groups: dict[str, list[dict]],
                     remaining: list[dict]) -> list[dict]:
-    """Which upcoming games can move a team across the top-8 wildcard line.
+    """Which upcoming games change *who advances to the Round of 32*.
 
     For every remaining game and each of its three outcomes, project that one
-    result onto its group (re-sorted by the FIFA tiebreak), recompute the
-    cross-group third-place race, and report any change in the IN (top-8) set.
-    Only games with at least one membership-changing outcome are returned.
+    result onto its group (re-sorted by the FIFA tiebreak), recompute the full
+    advancement set (top-2 of every group + 8 best thirds), and report any team
+    that enters or drops out of it. Only games with a change are returned.
     """
     from .clinch import apply_result            # local import: avoid cycle
 
-    base_in = _wildcard_in_set(groups)
+    base_in = advancement_set(groups)
     out = []
     for m in remaining:
         g = m.get("group")
@@ -81,7 +87,7 @@ def wildcard_swings(groups: dict[str, list[dict]],
                               reverse=True)
             projected = dict(groups)
             projected[g] = new_rows
-            new_in = _wildcard_in_set(projected)
+            new_in = advancement_set(projected)
             entered = sorted(new_in - base_in)
             dropped = sorted(base_in - new_in)
             if entered or dropped:

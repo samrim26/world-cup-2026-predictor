@@ -1,6 +1,6 @@
 """Tests for the Phase-6 live views: predicted bracket, wildcard swings, rankings sort."""
 from wcp.live import user_picks
-from wcp.live.tracker import wildcard_swings, third_place_race
+from wcp.live.tracker import wildcard_swings, advancement_set
 from wcp.live.rankings import build_rankings
 
 _KO_ORDER = ["Round of 32", "Round of 16", "Quarterfinals", "Semifinals", "Final"]
@@ -42,17 +42,40 @@ def test_wildcard_swings_structure():
         remaining.append({"group": g, "home": c, "away": d, "kickoff": f"2026-06-2{i%10}",
                           "et_date": "2026-06-24", "et_time": "12:00 PM"})
     sw = wildcard_swings(groups, remaining)
-    in_set = {t["abbr"] for t in third_place_race(groups) if t["wildcard_status"] == "IN"}
+    adv = advancement_set(groups)
     for s in sw:
         assert s["outcomes"], "swing game must have >=1 changing outcome"
         for o in s["outcomes"]:
             assert o["label"]
             assert set(o["entered"]).isdisjoint(o["dropped"])      # disjoint
-            # a dropped team was IN; an entered team was OUT
-            for ab in o["dropped"]:
-                assert ab in in_set
-            for ab in o["entered"]:
-                assert ab not in in_set
+            # a dropped team was advancing; an entered team was not
+            for abv in o["dropped"]:
+                assert abv in adv
+            for abv in o["entered"]:
+                assert abv not in adv
+
+
+def test_dropped_team_is_never_top2():
+    """Invariant for the 'POR OUT' regression: a team that finishes in the top
+    two of its group after an outcome can never be reported as dropping OUT of
+    the advancement set (top-2 always advances)."""
+    from wcp.live.clinch import apply_result
+
+    groups, remaining = {}, []
+    for i, g in enumerate("ABCDEFGHIJKL"):
+        a, b, c, d = f"{g}1", f"{g}2", f"{g}3", f"{g}4"
+        groups[g] = _group([(a, 6, 3, 4), (b, 3, 0, 3), (c, 3, 0, 2), (d, 0, -3, 0)])
+        remaining.append({"group": g, "home": b, "away": c, "kickoff": f"2026-06-2{i%10}",
+                          "et_date": "2026-06-24", "et_time": "12:00 PM"})
+    sw = wildcard_swings(groups, remaining)
+    for s in sw:
+        rows = groups[s["group"]]
+        for o in s["outcomes"]:
+            new = sorted(apply_result(rows, s["home"], s["away"], o["outcome"]),
+                         key=lambda t: (t["Pts"], t["GD"], t["GF"]), reverse=True)
+            top2 = {new[0]["abbr"], new[1]["abbr"]}
+            assert top2.isdisjoint(o["dropped"]), \
+                f"a top-2 team was wrongly marked OUT: {top2 & set(o['dropped'])}"
 
 
 def test_rankings_sorted_by_points_no_odds_dependency():
