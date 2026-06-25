@@ -140,7 +140,10 @@ def game_implications(groups: dict[str, list[dict]],
             "group": g, "home": m["home"], "away": m["away"],
             "home_name": m.get("home_name", m["home"]), "away_name": m.get("away_name", m["away"]),
             "et_date": m.get("et_date", ""), "et_time": m.get("et_time", ""),
-            "kickoff": m.get("kickoff", ""), "outcomes": outcomes,
+            "kickoff": m.get("kickoff", ""),
+            "state": m.get("state", "pre"), "clock": m.get("clock", ""),
+            "home_score": m.get("home_score"), "away_score": m.get("away_score"),
+            "outcomes": outcomes,
         })
     out.sort(key=lambda x: (x["kickoff"] or "9", x["group"]))
     return out

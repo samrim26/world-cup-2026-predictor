@@ -32,7 +32,9 @@ def snapshot() -> dict:
     groups = feed.standings()                       # fetched once, reused below
     today = attach_predictions(feed.today())
     schedule = build_schedule(feed, groups)
-    remaining = [m for m in schedule if m["state"] == "pre"]
+    # "pre" and "in" (live): both are still undecided, so keep their scenarios
+    # up until the match actually ends (state == "post").
+    remaining = [m for m in schedule if m["state"] in ("pre", "in")]
     rem_by_group = {}
     for m in remaining:
         rem_by_group.setdefault(m["group"], []).append((m["home"], m["away"]))

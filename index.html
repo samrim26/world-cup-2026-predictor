@@ -189,9 +189,11 @@ function scenariosTab(){
   games.forEach(s=>{
     const key=`${s.group}|${s.home}|${s.away}`;
     const mark=movers.has(key)?' <span title="affects the 3rd-place wildcard cutoff">🟡</span>':'';
+    const liveTag=s.state==='in'
+      ? ` <span class="live">🔴 ${esc(s.home_score)}–${esc(s.away_score)}${s.clock?' '+esc(s.clock):''}</span>`:'';
     h+=`<div class="card" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:baseline">
-        <span><b>${tl(s.home)} v ${tl(s.away)}</b>${mark}</span>
+        <span><b>${tl(s.home)} v ${tl(s.away)}</b>${mark}${liveTag}</span>
         <span class="dim" style="font-size:12px"><span class="gbadge">${esc(s.group)}</span> ${fmtDate(s.et_date)} · ${esc(s.et_time||'')}</span></div>
       <table style="margin-top:6px">`;
     s.outcomes.forEach(o=>{
