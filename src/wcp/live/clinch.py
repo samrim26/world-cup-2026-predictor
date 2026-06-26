@@ -106,44 +106,76 @@ def _status(c: dict) -> str:
     return "none"
 
 
+def _ranking_after(rows, applied, others):
+    """Sorted group ranking (with clinch status) for a fully-applied scenario."""
+    cl = group_clinch(applied, others)
+    ordered = sorted(applied, key=lambda t: (t["Pts"], t["GD"], t["GF"]), reverse=True)
+    return [{
+        "pos": i + 1, "abbr": t["abbr"], "name": t.get("team", t["abbr"]),
+        "pts": t["Pts"], "gd": t["GD"],
+        "status": _status(cl.get(t["abbr"], {})),
+    } for i, t in enumerate(ordered)]
+
+
+def _label(m, oc):
+    who = m["home"] if oc == "H" else (m["away"] if oc == "A" else "")
+    return f"{who} win" if who else "draw"
+
+
 def game_implications(groups: dict[str, list[dict]],
                       remaining: list[dict]) -> list[dict]:
-    """For each remaining game, the group's projected ranking after each of its
-    three outcomes, ordered by points->GD->GF, with each team's clinch status."""
-    rem_by_group: dict[str, list[tuple[str, str]]] = {}
+    """Per-slot projected group rankings.
+
+    Games are clustered by (group, kickoff): games in the same group that kick
+    off at the same time (the final group matchday plays *simultaneously*) are a
+    single slot whose outcomes are the JOINT combinations of all its games
+    (3**k), so the table reflects both results together rather than pretending
+    each game resolves on its own. A lone game is just a 1-game slot (3 combos).
+    """
+    rem_by_group: dict[str, list[dict]] = {}
     for m in remaining:
-        rem_by_group.setdefault(m["group"], []).append((m["home"], m["away"]))
+        rem_by_group.setdefault(m["group"], []).append(m)
     out = []
-    for m in remaining:
-        g = m["group"]
+    for g, gms in rem_by_group.items():
         rows = groups.get(g)
         if not rows:
             continue
-        # The other games still open in this group after this one is played.
-        others = [pr for pr in rem_by_group[g] if pr != (m["home"], m["away"])]
-        outcomes = []
-        for oc in ("H", "D", "A"):
-            after_rows = apply_result(rows, m["home"], m["away"], oc)
-            cl = group_clinch(after_rows, others)
-            ordered = sorted(after_rows, key=lambda t: (t["Pts"], t["GD"], t["GF"]),
-                             reverse=True)
-            ranking = [{
-                "pos": i + 1, "abbr": t["abbr"], "name": t.get("team", t["abbr"]),
-                "pts": t["Pts"], "gd": t["GD"],
-                "status": _status(cl.get(t["abbr"], {})),
-            } for i, t in enumerate(ordered)]
-            who = m["home"] if oc == "H" else (m["away"] if oc == "A" else "")
-            outcomes.append({"outcome": oc,
-                             "label": f"{who} win" if who else "draw",
-                             "ranking": ranking})
-        out.append({
-            "group": g, "home": m["home"], "away": m["away"],
-            "home_name": m.get("home_name", m["home"]), "away_name": m.get("away_name", m["away"]),
-            "et_date": m.get("et_date", ""), "et_time": m.get("et_time", ""),
-            "kickoff": m.get("kickoff", ""),
-            "state": m.get("state", "pre"), "clock": m.get("clock", ""),
-            "home_score": m.get("home_score"), "away_score": m.get("away_score"),
-            "outcomes": outcomes,
-        })
+        # cluster this group's remaining games by kickoff time (simultaneous)
+        slots: dict[str, list[dict]] = {}
+        for m in gms:
+            slots.setdefault(m.get("kickoff", "") or f"_{m['home']}{m['away']}", []).append(m)
+        for cluster in slots.values():
+            cluster_pairs = {(m["home"], m["away"]) for m in cluster}
+            # games still open in the group AFTER this slot is decided
+            others = [(m["home"], m["away"]) for m in gms
+                      if (m["home"], m["away"]) not in cluster_pairs]
+            combos = []
+            for combo in product("HDA", repeat=len(cluster)):
+                applied = rows
+                results = []
+                for m, oc in zip(cluster, combo):
+                    applied = apply_result(applied, m["home"], m["away"], oc)
+                    results.append({"home": m["home"], "away": m["away"],
+                                    "outcome": oc, "label": _label(m, oc)})
+                combos.append({
+                    "results": results,
+                    "label": " · ".join(r["label"] for r in results),
+                    "ranking": _ranking_after(rows, applied, others),
+                })
+            first = cluster[0]
+            out.append({
+                "group": g,
+                "et_date": first.get("et_date", ""), "et_time": first.get("et_time", ""),
+                "kickoff": first.get("kickoff", ""),
+                "simultaneous": len(cluster) > 1,
+                "games": [{
+                    "home": m["home"], "away": m["away"],
+                    "home_name": m.get("home_name", m["home"]),
+                    "away_name": m.get("away_name", m["away"]),
+                    "state": m.get("state", "pre"), "clock": m.get("clock", ""),
+                    "home_score": m.get("home_score"), "away_score": m.get("away_score"),
+                } for m in cluster],
+                "combos": combos,
+            })
     out.sort(key=lambda x: (x["kickoff"] or "9", x["group"]))
     return out

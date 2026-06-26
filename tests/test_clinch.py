@@ -155,21 +155,49 @@ def test_head_to_head_clinch():
     assert cl["TUR"]["out_entirely"] is False        # TUR can still reach 3rd (3 pts)
 
 
-def test_implications_structure():
-    rows = [{"abbr": "A", "Pts": 4, "P": 2, "GF": 3, "GA": 1, "GD": 2, "team": "A"},
+def _x_rows():
+    return [{"abbr": "A", "Pts": 4, "P": 2, "GF": 3, "GA": 1, "GD": 2, "team": "A"},
             {"abbr": "B", "Pts": 3, "P": 2, "GF": 2, "GA": 2, "GD": 0, "team": "B"},
             {"abbr": "C", "Pts": 2, "P": 2, "GF": 2, "GA": 3, "GD": -1, "team": "C"},
             {"abbr": "D", "Pts": 1, "P": 2, "GF": 1, "GA": 2, "GD": -1, "team": "D"}]
-    groups = {"X": rows}
-    remaining = [{"group": "X", "home": "A", "away": "D"},
-                 {"group": "X", "home": "B", "away": "C"}]
-    imps = clinch.game_implications(groups, remaining)
-    assert len(imps) == 2
-    for im in imps:
-        for o in im["outcomes"]:
-            r = o["ranking"]
-            assert len(r) == 4
-            assert [x["pos"] for x in r] == [1, 2, 3, 4]
-            # ordered by points descending
-            assert all(r[i]["pts"] >= r[i + 1]["pts"] for i in range(3))
-            assert all(x["status"] in ("first", "advance", "elim", "none") for x in r)
+
+
+def _check_combo_ranking(c):
+    r = c["ranking"]
+    assert len(r) == 4
+    assert [x["pos"] for x in r] == [1, 2, 3, 4]
+    assert all(r[i]["pts"] >= r[i + 1]["pts"] for i in range(3))        # points desc
+    assert all(x["status"] in ("first", "advance", "elim", "none") for x in r)
+    assert len(c["results"]) == len(c["label"].split(" · "))
+
+
+def test_implications_staggered_are_separate_slots():
+    groups = {"X": _x_rows()}
+    remaining = [{"group": "X", "home": "A", "away": "D", "kickoff": "2026-06-27T16:00Z"},
+                 {"group": "X", "home": "B", "away": "C", "kickoff": "2026-06-27T20:00Z"}]
+    slots = clinch.game_implications(groups, remaining)
+    assert len(slots) == 2                                  # different kickoffs -> 2 slots
+    for s in slots:
+        assert s["simultaneous"] is False and len(s["games"]) == 1
+        assert len(s["combos"]) == 3                        # 3 outcomes
+        for c in s["combos"]:
+            _check_combo_ranking(c)
+
+
+def test_implications_simultaneous_is_joint():
+    groups = {"X": _x_rows()}
+    kick = "2026-06-27T20:00Z"                              # SAME kickoff = simultaneous
+    remaining = [{"group": "X", "home": "A", "away": "D", "kickoff": kick},
+                 {"group": "X", "home": "B", "away": "C", "kickoff": kick}]
+    slots = clinch.game_implications(groups, remaining)
+    assert len(slots) == 1                                  # one joint slot
+    s = slots[0]
+    assert s["simultaneous"] is True and len(s["games"]) == 2
+    assert len(s["combos"]) == 9                            # 3x3 joint outcomes
+    for c in s["combos"]:
+        assert len(c["results"]) == 2                       # both games in each combo
+        _check_combo_ranking(c)
+    # the final matchday is fully decided -> no team is left "none" in a clear win combo
+    a_wins_b_wins = next(c for c in s["combos"]
+                         if c["results"][0]["outcome"] == "H" and c["results"][1]["outcome"] == "H")
+    assert a_wins_b_wins["ranking"][0]["abbr"] == "A"       # A wins -> tops the group

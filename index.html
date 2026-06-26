@@ -61,6 +61,13 @@
   .chips button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
   .wc{font-size:11px;background:rgba(241,196,15,.10);border:1px solid rgba(241,196,15,.35);
     border-radius:6px;padding:1px 6px;white-space:nowrap;color:var(--dim)}
+  /* simultaneous-games joint-outcome grid */
+  .simwrap{overflow-x:auto;margin-top:8px}
+  .simgrid{border-collapse:collapse;font-size:11px;min-width:460px}
+  .simgrid th,.simgrid td{border:1px solid var(--line);padding:4px 7px;vertical-align:top;text-align:left}
+  .simgrid th{background:var(--card2);color:var(--dim);font-weight:600;white-space:nowrap}
+  .simgrid td>div{white-space:nowrap;line-height:1.55}
+  .simnote{font-size:11px;color:var(--cyan);margin-top:4px}
   /* bracket */
   .bk{display:flex;align-items:stretch;gap:6px;overflow-x:auto;padding:6px 0}
   .side{display:flex;flex:1}
@@ -183,32 +190,53 @@ function scenariosTab(){
   h+=`<div class="chips"><button class="${scenFilter==='All'?'on':''}" onclick="setScenFilter('All')">All</button>`+
      `<button class="${scenFilter==='WC'?'on':''}" onclick="setScenFilter('WC')">🟡 Wildcard movers</button>`+
      grps.map(g=>`<button class="${scenFilter===g?'on':''}" onclick="setScenFilter('${g}')">${g}</button>`).join('')+`</div>`;
-  const games=DATA.scenarios.filter(s=>scenFilter==='All'?true:
-    scenFilter==='WC'?movers.has(`${s.group}|${s.home}|${s.away}`):s.group===scenFilter);
-  if(!games.length)return h+`<p class="dim">No games match this filter.</p>`;
-  games.forEach(s=>{
-    const key=`${s.group}|${s.home}|${s.away}`;
-    const mark=movers.has(key)?' <span title="affects the 3rd-place wildcard cutoff">🟡</span>':'';
-    const liveTag=s.state==='in'
-      ? ` <span class="live">🔴 ${esc(s.home_score)}–${esc(s.away_score)}${s.clock?' '+esc(s.clock):''}</span>`:'';
+  const isMover=s=>s.games.some(g=>movers.has(`${s.group}|${g.home}|${g.away}`));
+  const slots=DATA.scenarios.filter(s=>scenFilter==='All'?true:
+    scenFilter==='WC'?isMover(s):s.group===scenFilter);
+  if(!slots.length)return h+`<p class="dim">No games match this filter.</p>`;
+  // one team's line in a ranking, coloured by clinch status
+  const line=(r,pts)=>{const cls=r.status==='elim'?'out':(r.status==='advance'||r.status==='first')?'in':'';
+    const b=r.status==='first'?'font-weight:700':'';
+    return `<span class="${cls}" style="${b}">${r.pos}. ${tl(r.abbr)}${pts?` <small class="dim" style="color:inherit;opacity:.7">${r.pts}p</small>`:''}</span>`;};
+  const gLive=g=>g.state==='in'
+    ? ` <span class="live">🔴 ${esc(g.home_score)}–${esc(g.away_score)}${g.clock?' '+esc(g.clock):''}</span>`:'';
+  const gl=(g,oc)=>oc==='H'?`${esc(g.home)} win`:oc==='A'?`${esc(g.away)} win`:'draw';
+  slots.forEach(s=>{
+    const mark=isMover(s)?' <span title="affects the 3rd-place wildcard cutoff">🟡</span>':'';
+    const title=s.games.map(g=>`${tl(g.home)} v ${tl(g.away)}${gLive(g)}`).join(' &nbsp;+&nbsp; ');
     h+=`<div class="card" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:baseline">
-        <span><b>${tl(s.home)} v ${tl(s.away)}</b>${mark}${liveTag}</span>
-        <span class="dim" style="font-size:12px"><span class="gbadge">${esc(s.group)}</span> ${fmtDate(s.et_date)} · ${esc(s.et_time||'')}</span></div>
-      <table style="margin-top:6px">`;
-    s.outcomes.forEach(o=>{
-      const order=o.ranking.map(r=>{
-        const cls=r.status==='elim'?'out':(r.status==='advance'||r.status==='first')?'in':'';
-        const bold=r.status==='first'?'font-weight:700':'';
-        return `<span class="${cls}" style="${bold}">${r.pos}. ${tl(r.abbr)} <small class="dim" style="color:inherit;opacity:.7">${r.pts}p</small></span>`;
-      }).join(' &nbsp; ');
-      const sw=swing[`${key}|${o.outcome}`];
-      let wc='';
-      if(sw){const parts=sw.dropped.map(a=>`<span class="out">${esc(a)} OUT</span>`)
-          .concat(sw.entered.map(a=>`<span class="in">${esc(a)} IN</span>`)).join(', ');
-        wc=` <span class="wc">🟡 ${parts}</span>`;}
-      h+=`<tr><td style="width:84px;color:var(--dim);vertical-align:top">${esc(o.label)}</td><td>${order}${wc}</td></tr>`;});
-    h+=`</table></div>`;});
+        <span><b>${title}</b>${mark}</span>
+        <span class="dim" style="font-size:12px"><span class="gbadge">${esc(s.group)}</span> ${fmtDate(s.et_date)} · ${esc(s.et_time||'')}</span></div>`;
+    if(s.simultaneous && s.games.length===2){
+      // both kick off together -> the table depends on BOTH results (3x3 grid)
+      const [g0,g1]=s.games, cmap={};
+      s.combos.forEach(c=>cmap[c.results[0].outcome+c.results[1].outcome]=c);
+      const cell=c=>c?c.ranking.map(r=>{const cls=r.status==='elim'?'out':(r.status==='advance'||r.status==='first')?'in':'dim';
+        const b=r.status==='first'?'font-weight:700':'';return `<div class="${cls}" style="${b}">${r.pos} ${esc(r.abbr)}</div>`;}).join(''):'';
+      h+=`<div class="simnote">⏱ These kick off simultaneously — the final table depends on BOTH results.</div>
+        <div class="simwrap"><table class="simgrid">
+        <tr><th style="font-size:10px">${tl(g0.home)} v ${tl(g0.away)} ⌄<br>&nbsp;&nbsp;&nbsp;${tl(g1.home)} v ${tl(g1.away)} ›</th>
+          ${['H','D','A'].map(j=>`<th>${gl(g1,j)}</th>`).join('')}</tr>`;
+      ['H','D','A'].forEach(i=>{h+=`<tr><th>${gl(g0,i)}</th>`+
+        ['H','D','A'].map(j=>`<td>${cell(cmap[i+j])}</td>`).join('')+`</tr>`;});
+      h+=`</table></div></div>`;
+    } else {
+      // single game (or rare >2): one row per (joint) outcome
+      const single=s.games.length===1;
+      const key=single?`${s.group}|${s.games[0].home}|${s.games[0].away}`:null;
+      h+=`<table style="margin-top:6px">`;
+      s.combos.forEach(c=>{
+        const order=c.ranking.map(r=>line(r,true)).join(' &nbsp; ');
+        let wc='';
+        if(single){const sw=swing[`${key}|${c.results[0].outcome}`];
+          if(sw){const parts=sw.dropped.map(a=>`<span class="out">${esc(a)} OUT</span>`)
+            .concat(sw.entered.map(a=>`<span class="in">${esc(a)} IN</span>`)).join(', ');
+            wc=` <span class="wc">🟡 ${parts}</span>`;}}
+        h+=`<tr><td style="width:96px;color:var(--dim);vertical-align:top">${esc(c.label)}</td><td>${order}${wc}</td></tr>`;});
+      h+=`</table>`;
+    }
+    h+=`</div>`;});
   return h;
 }
 
