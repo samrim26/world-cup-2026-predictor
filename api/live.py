@@ -16,7 +16,9 @@ from wcp.live.feed import ESPNFeed                                  # noqa: E402
 from wcp.live.tracker import (qualification_flags, third_place_race,  # noqa: E402
                               tournament_complete_groups, wildcard_swings)
 from wcp.live import user_picks                                     # noqa: E402
-from wcp.live.bracket_tracker import goal_feed, bracket_status      # noqa: E402
+from wcp.live.bracket_tracker import (goal_feed, bracket_status,    # noqa: E402
+                                      eliminated_teams, finished_knockouts)
+from wcp.live import pool                                           # noqa: E402
 from wcp.live import compare                                        # noqa: E402
 from wcp.live.live_bracket import build as build_bracket, by_round  # noqa: E402
 from wcp.live.user_picks import attach_predictions                  # noqa: E402
@@ -25,6 +27,18 @@ from wcp.live.schedule import (build_schedule, score_from_schedule,  # noqa: E40
 from wcp.live.advance_odds import r32_odds                          # noqa: E402
 from wcp.live.rankings import build_rankings                        # noqa: E402
 from wcp.live import clinch                                         # noqa: E402
+
+
+def _third_place_winner(feed, reached):
+    """Winner of the third-place playoff (the finished knockout between the two
+    semifinal losers), or None until it's played."""
+    losers = reached.get("SF", set()) - reached.get("FINAL", set())
+    if len(losers) < 2:
+        return None
+    for ko in finished_knockouts(feed):
+        if ko["winner"] in losers and ko["loser"] in losers:
+            return ko["winner"]
+    return None
 
 
 def snapshot() -> dict:
@@ -41,6 +55,11 @@ def snapshot() -> dict:
     odds = r32_odds(groups, remaining)
     locked = {g: clinch.locked_positions(rows, rem_by_group.get(g, []))
               for g, rows in groups.items()}
+    live_bracket = by_round(build_bracket(feed, groups, locked))
+    # Head-to-head pool race vs the rival ARG backer.
+    reached = pool.reached_rounds(live_bracket)
+    elim = eliminated_teams(feed, groups)[0]
+    third_winner = _third_place_winner(feed, reached)
     return {
         "updated": datetime.now(timezone.utc).strftime("%H:%M UTC, %b %d"),
         "source": feed.source,
@@ -52,7 +71,8 @@ def snapshot() -> dict:
         "score": score_from_schedule(schedule),     # derived; no extra fetches
         "qual": compare.qualifier_accuracy(groups),
         "bracket_survival": bracket_status(feed, groups),
-        "live_bracket": by_round(build_bracket(feed, groups, locked)),
+        "live_bracket": live_bracket,
+        "pool": pool.head_to_head(reached, third_winner, elim),
         "schedule": schedule,
         "advance_odds": odds,
         "rankings": build_rankings(groups, odds, rem_by_group),

@@ -68,6 +68,14 @@
   .simgrid th{background:var(--card2);color:var(--dim);font-weight:600;white-space:nowrap}
   .simgrid td>div{white-space:nowrap;line-height:1.55}
   .simnote{font-size:11px;color:var(--cyan);margin-top:4px}
+  /* pool race pick badges */
+  .pikyou{background:rgba(241,196,15,.18);color:var(--yel);border-radius:4px;padding:0 5px;font-size:10px;font-weight:700}
+  .pikriv{background:rgba(52,198,224,.15);color:var(--cyan);border-radius:4px;padding:0 5px;font-size:10px;font-weight:700}
+  .pikboth{background:#2a2f45;color:var(--dim);border-radius:4px;padding:0 5px;font-size:10px;font-weight:700}
+  .scorebar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+  .scorebar .metric{font-size:30px}
+  .lever{padding:6px 0;border-top:1px solid #182135}
+  .lever:first-of-type{border-top:none}
   /* bracket */
   .bk{display:flex;align-items:stretch;gap:6px;overflow-x:auto;padding:6px 0}
   .side{display:flex;flex:1}
@@ -108,8 +116,7 @@
 <div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()"><div class="modal" id="modal"></div></div>
 
 <script>
-const TABS=[['live','🔴 Live'],['matches','📅 Matches'],['scenarios','🔮 Scenarios'],['standings','📊 Standings'],
-            ['rankings','🏅 Rankings'],['bracket','🏆 Bracket'],['picks','🎯 My Picks']];
+const TABS=[['live','🔴 Live'],['bracket','🏆 Bracket'],['race','💰 Race'],['picks','🎯 My Picks'],['groups','📊 Groups']];
 let DATA=null, TAB='live';
 const esc=s=>String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const tl=ab=>ab?`<span class="tlink" data-team="${esc(ab)}">${esc(ab)}</span>`:'';
@@ -120,39 +127,98 @@ function nav(){document.getElementById('nav').innerHTML=
 function setTab(t){TAB=t;nav();body()}
 
 function meta(){
-  document.getElementById('meta').textContent=`updated ${DATA.updated} · groups ${DATA.groups_done}/12 done`;
-  const cs=DATA.bracket_survival;
-  document.getElementById('champ').innerHTML=`champion pick: <b class="${cs.champion_alive?'in':'out'}">${esc(cs.champion)} ${cs.champion_alive?'ALIVE':'OUT'}</b>`;
+  document.getElementById('meta').textContent=`updated ${DATA.updated}`;
+  const p=DATA.pool, lead=p.lead;
+  document.getElementById('champ').innerHTML=`<b>Race:</b> You ${p.you.total} – ${p.rival.total} Rival <b class="${lead>=0?'in':'out'}">(${lead>=0?'+':''}${lead})</b>`;
 }
 
 /* ---------- TABS ---------- */
 function body(){
   if(!DATA){return}
-  const f={live:liveTab,matches:matchesTab,scenarios:scenariosTab,standings:standingsTab,rankings:rankingsTab,bracket:bracketTab,picks:picksTab}[TAB];
+  const f={live:liveTab,bracket:bracketTab,race:raceTab,picks:picksTab,groups:groupsTab}[TAB];
   document.getElementById('app').innerHTML=f();
 }
 
+/* group-stage views, archived behind a sub-nav */
+let groupSub='standings';
+function setGroupSub(s){groupSub=s;body();}
+const GROUP_SUBS=[['standings','Standings'],['matches','Matches'],['rankings','Rankings'],['scenarios','Scenarios']];
+function groupsTab(){
+  let h=`<p class="dim" style="font-size:12px;margin:2px 0 8px">Group stage complete — archived for reference.</p>
+    <div class="chips">`+GROUP_SUBS.map(([k,l])=>`<button class="${groupSub===k?'on':''}" onclick="setGroupSub('${k}')">${l}</button>`).join('')+`</div>`;
+  return h+({standings:standingsTab,matches:matchesTab,rankings:rankingsTab,scenarios:scenariosTab}[groupSub]());
+}
+
+// pick badge for a team: gold = your pick, blue = rival's, grey = both
+function pikBadge(t){const p=DATA.pool;const y=p.you_all.includes(t),r=p.rival_all.includes(t);
+  return y&&r?'<span class="pikboth">both</span>':y?'<span class="pikyou">you</span>':r?'<span class="pikriv">rival</span>':'';}
 function liveTab(){
-  let h=`<h2>Today</h2><div class="grid cards">`;
+  const p=DATA.pool, lead=p.lead;
+  const youLev={},rivLev={};p.you_levers.forEach(l=>youLev[l.team]=l.upside);p.rival_levers.forEach(l=>rivLev[l.team]=l.upside);
+  const stake=m=>{const parts=[];[m.home,m.away].forEach(t=>{
+      if(youLev[t])parts.push(`<span class="in">your ${esc(t)} +${youLev[t]} in play</span>`);
+      else if(rivLev[t])parts.push(`<span class="out">rival ${esc(t)} +${rivLev[t]} in play</span>`);});
+    return parts.length?`<div class="dim" style="font-size:11px;margin-top:4px">${parts.join(' · ')}</div>`:'';};
+  let h=`<div class="card" style="border-color:var(--accent)"><div class="scorebar">
+      <span><b>💰 The Race</b> <span class="dim">vs ${esc(p.rival.name)}</span></span>
+      <span style="font-size:15px">You <b>${p.you.total}</b> – <b>${p.rival.total}</b> Rival
+        <b class="${lead>=0?'in':'out'}">(${lead>=0?'+':''}${lead})</b>
+        <button onclick="setTab('race')" style="margin-left:8px;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:3px 9px;font:inherit;font-weight:600;cursor:pointer">details →</button></span>
+    </div></div>`;
+  h+=`<h2>Today</h2><div class="grid cards">`;
   if(!DATA.today.length)h+=`<p class="dim">No matches today.</p>`;
   DATA.today.forEach(m=>{
     const tag=m.state==='in'?`<span class="live">🔴 ${esc(m.clock||'LIVE')}</span>`:m.state==='post'?`<span class="dim">FT</span>`:`<span class="dim">${esc(m.detail||'scheduled')}</span>`;
-    const pr=m.predicted?`<span class="pill">pred ${esc(m.predicted)}</span>`:'';
-    h+=`<div class="card"><div class="dim">${tl(m.home)} v ${tl(m.away)}</div>
+    h+=`<div class="card"><div class="dim">${tl(m.home)} ${pikBadge(m.home)} v ${tl(m.away)} ${pikBadge(m.away)}</div>
       <div class="metric">${esc(m.home_score)}–${esc(m.away_score)}</div>
-      <div style="display:flex;justify-content:space-between">${tag}${pr}</div></div>`;});
+      <div style="display:flex;justify-content:space-between">${tag}</div>${stake(m)}</div>`;});
   h+=`</div>`;
   if(DATA.goals.length){h+=`<h2>⚽ Goals (latest first)</h2><div class="card">`;
     DATA.goals.forEach(g=>h+=`<div style="padding:3px 0"><span class="dim" style="display:inline-block;width:60px;text-align:right">${esc(g.clock)}</span>
       <b>${tl(g.team)}</b> ${esc(g.scorer)} <span class="dim">${g.type!=='Goal'?'('+esc(g.type)+') ':''}[${esc(g.match)}]</span></div>`);
     h+=`</div>`;}
-  h+=`<h2>🟡 Third-place wildcard race <span class="dim">(top 8 advance)</span></h2><div class="card"><table>
-    <tr><th>#</th><th>Team</th><th>Grp</th><th>P</th><th>Pts</th><th>GD</th><th>GF</th><th></th></tr>`;
-  DATA.thirds.forEach(t=>{const cl=t.wildcard_status==='IN'?'in':'out';
-    if(t.wildcard_rank===9)h+=`<tr><td colspan="8" style="border-top:2px dashed var(--red);height:2px;padding:0"></td></tr>`;
-    h+=`<tr class="${cl}"><td>${t.wildcard_rank}</td><td>${tl(t.abbr)} <span class="dim">${esc(t.team)}</span></td><td>${esc(t.group)}</td>
-      <td>${t.P}</td><td>${t.Pts}</td><td>${t.GD>=0?'+':''}${t.GD}</td><td>${t.GF}</td><td>${t.wildcard_status}</td></tr>`;});
-  return h+`</table></div>`;
+  return h;
+}
+
+/* ---------- RACE (head-to-head pool) ---------- */
+function leverCol(title,levers,accent){
+  let h=`<div class="card"><div class="pill">${esc(title)}</div>`;
+  if(!levers.length)h+=`<p class="dim" style="font-size:12px;margin:6px 0 0">No live edges left.</p>`;
+  levers.forEach(l=>{
+    const rounds=l.rounds.map(r=>{const c=r.state==='hit'?'in':r.state==='out'?'out':'dim';
+      const mk=r.state==='hit'?' ✓':r.state==='out'?' ✗':'';
+      return `<span class="${c}" style="font-size:11px">${esc(r.label)} +${r.pts}${mk}</span>`;}).join(' · ');
+    h+=`<div class="lever"><b>${tl(l.team)}</b> <span class="${accent}" style="font-weight:700">+${l.upside}</span>
+       <span class="dim" style="font-size:11px">still in play</span>
+       <div class="dim" style="font-size:11px;margin-top:2px">${rounds}</div></div>`;});
+  return h+`</div>`;
+}
+function raceTab(){
+  const p=DATA.pool, lead=p.lead;
+  const leadCls=lead>0?'in':lead<0?'out':'dim';
+  const youUp=p.you_levers.reduce((s,l)=>s+l.upside,0), rivUp=p.rival_levers.reduce((s,l)=>s+l.upside,0);
+  let h=`<div class="card" style="border-color:var(--accent)"><div class="scorebar">
+      <div><div class="dim" style="font-size:12px">YOU</div><div class="metric">${p.you.total}</div></div>
+      <div style="text-align:center"><div class="${leadCls}" style="font-size:14px;font-weight:700">${lead>0?'You lead':lead<0?'You trail':'Level'}${lead?' by '+Math.abs(lead):''}</div>
+        <div class="dim" style="font-size:11px;margin-top:2px">💰 $${p.prize.pool} pool · $${p.prize.buy_in} buy-in</div></div>
+      <div style="text-align:right"><div class="dim" style="font-size:12px">${esc(p.rival.name).toUpperCase()}</div><div class="metric">${p.rival.total}</div></div>
+    </div></div>`;
+  h+=`<p class="dim" style="font-size:12px;margin:10px 2px">🤝 ${esc(p.shared.note)} So the title race between you two is decided purely where your brackets diverge:</p>`;
+  h+=`<div class="grid" style="grid-template-columns:1fr 1fr;gap:12px">
+      ${leverCol('🟡 Your edge',p.you_levers,'in')}
+      ${leverCol("🔵 Rival's edge",p.rival_levers,'out')}</div>`;
+  h+=`<h2>📈 Where the lead can go</h2><div class="card" style="font-size:13px">
+      <div>If <b>all your edges hit</b> and theirs miss: <b class="in">+${lead+youUp}</b></div>
+      <div>If <b>all their edges hit</b> and yours miss: <b class="out">${lead-rivUp}</b></div>
+      <div class="dim" style="font-size:11px;margin-top:4px">Your ${youUp} pts vs their ${rivUp} pts still in play. Biggest swing: <b>${p.you_levers[0]?tl(p.you_levers[0].team)+' (+'+p.you_levers[0].upside+')':'—'}</b>.</div></div>`;
+  // per-round points
+  const RR=[['R32','R32'],['R16','R16'],['QF','Quarterfinal'],['SF','Semifinal'],['THIRD','Third place'],['FINAL','Final'],['WINNER','Winner']];
+  h+=`<h2>Points by round</h2><div class="card"><table><tr><th>Round</th><th>You</th><th>Rival</th></tr>`;
+  const cell=o=>`${o.earned}${o.potential>o.earned?` <span class="dim">(+${o.potential-o.earned})</span>`:''}`;
+  RR.forEach(([k,lbl])=>{h+=`<tr><td>${esc(lbl)}</td><td>${cell(p.you.rounds[k])}</td><td>${cell(p.rival.rounds[k])}</td></tr>`;});
+  h+=`</table><div class="dim" style="font-size:11px;margin-top:4px">earned (+ still live)</div></div>`;
+  if(p.third_undetermined)h+=`<p class="dim" style="font-size:11px;margin-top:8px">⚠️ Rival's 3rd-place pick is undetermined (England or France) — modeled as a possible +40 either way.</p>`;
+  return h;
 }
 
 function matchesTab(){
@@ -274,7 +340,12 @@ function bracketTab(){
   const col=nums=>{let h='';for(let i=0;i<nums.length;i+=2){
       h+=`<div class="pair">${nums.slice(i,i+2).map(n=>bkM(byNum[n])).join('')}</div>`;}return `<div class="col">${h}</div>`;};
   const fin=byNum[104];
-  return `<h2>Live bracket <span class="dim">· official 2026 template · ? = provisional · 3rd[..] = wildcard slot</span></h2>
+  const pr=DATA.pool, banked=pr.you.bracket_earned;
+  const earnedStr=['R32','R16','QF','SF','THIRD'].filter(k=>pr.you.rounds[k].earned).map(k=>`${k} ${pr.you.rounds[k].earned}`).join(' · ')||'—';
+  return `<div class="card" style="margin-bottom:10px;font-size:13px"><b>Your bracket points so far:</b> ${banked}
+      <span class="dim">(${earnedStr})</span> &nbsp;·&nbsp;
+      <span class="dim" style="font-size:11px"><span style="color:var(--yel)">•</span> your pick &nbsp; <span style="color:var(--cyan)">•</span> rival's pick</span></div>
+   <h2>Live bracket <span class="dim">· official 2026 template · ? = provisional · 3rd[..] = wildcard slot</span></h2>
    <div class="bk">
     <div class="side left">${col(L_R32)}${col(L_R16)}${col(L_QF)}${col(L_SF)}</div>
     <div class="center">
@@ -310,9 +381,13 @@ function picksBracket(){
    </div>
    <p class="dim" style="font-size:11px;margin-top:10px">Your locked-in picks (green = your predicted winner). Scroll horizontally on small screens.</p>`;
 }
+// tiny pick marker: gold = your pick, cyan = rival's
+function pikDot(t){if(!DATA.pool)return '';const y=DATA.pool.you_all.includes(t),r=DATA.pool.rival_all.includes(t);
+  return y&&r?'<span title="both picks" style="color:var(--dim)">•</span>':y?'<span title="your pick" style="color:var(--yel)">•</span>':r?'<span title="rival pick" style="color:var(--cyan)">•</span>':'';}
 function bkSide(m,which){if(!m)return '';const team=m[which+'_team'],lbl=m[which];
-  if(m.winner&&team===m.winner)return `<b class="win">${esc(lbl)}</b>`;
-  return team&&isReal(team)?tl(team)+(lbl.endsWith('?')?'?':''):(m.ready?esc(lbl):`<span class="dim">${esc(lbl)}</span>`);}
+  const dot=team&&isReal(team)?pikDot(team):'';
+  if(m.winner&&team===m.winner)return `<b class="win">${esc(lbl)}</b>${dot}`;
+  return team&&isReal(team)?tl(team)+(lbl.endsWith('?')?'?':'')+dot:(m.ready?esc(lbl):`<span class="dim">${esc(lbl)}</span>`);}
 function bkM(m){if(!m)return '<div class="m dim">—</div>';
   return `<div class="m" title="Match ${m.match}"><div>${bkSide(m,'a')}</div><div>${bkSide(m,'b')}</div></div>`;}
 function bs3(){return '—';}
