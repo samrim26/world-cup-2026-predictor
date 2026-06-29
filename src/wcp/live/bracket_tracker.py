@@ -6,6 +6,7 @@ meaningful as groups finish and the knockout rounds begin.
 """
 from __future__ import annotations
 
+import time
 from datetime import date, timedelta
 
 from . import user_picks as up
@@ -13,6 +14,29 @@ from .tracker import third_place_race, tournament_complete_groups
 
 KO_START = date(2026, 6, 28)
 FINAL = date(2026, 7, 19)
+
+# Finalised past knockout days never change -> cache them forever; the whole
+# result is memoised for a few seconds so the several callers in one snapshot
+# share a single set of fetches while still refreshing live between polls.
+_KO_PAST_DAYS: dict[str, list[dict]] = {}
+_KO_MEMO: dict = {"ts": 0.0, "val": None}
+
+
+def _ko_result(m: dict):
+    """(winner, loser) for a finished knockout match, incl. penalty shootouts."""
+    try:
+        hs, as_ = int(m["home_score"]), int(m["away_score"])
+    except (ValueError, TypeError):
+        return None
+    if hs > as_:
+        return m["home"], m["away"]
+    if as_ > hs:
+        return m["away"], m["home"]
+    if m.get("home_winner"):            # level after ET -> decided on penalties
+        return m["home"], m["away"]
+    if m.get("away_winner"):
+        return m["away"], m["home"]
+    return None                          # shootout winner not yet known
 
 
 def actual_qualifiers(groups: dict[str, list[dict]]) -> set[str]:
@@ -28,25 +52,37 @@ def actual_qualifiers(groups: dict[str, list[dict]]) -> set[str]:
 
 
 def finished_knockouts(feed) -> list[dict]:
-    """Finished knockout matches (winner/loser by abbr)."""
+    """Finished knockout matches (winner/loser by abbr), shootouts included."""
+    now = time.time()
+    if _KO_MEMO["val"] is not None and now - _KO_MEMO["ts"] < 3:
+        return _KO_MEMO["val"]
     out = []
+    today = date.today()
     d = KO_START
-    while d <= min(FINAL, date.today()):
+    while d <= min(FINAL, today):
+        key = d.strftime("%Y%m%d")
+        if d < today and key in _KO_PAST_DAYS:       # finalised -> cached forever
+            out.extend(_KO_PAST_DAYS[key])
+            d += timedelta(days=1)
+            continue
+        matches, ok = [], False
         try:
-            for m in feed.day(d.strftime("%Y%m%d")):
-                if m["state"] != "post":
-                    continue
-                try:
-                    hs, as_ = int(m["home_score"]), int(m["away_score"])
-                except (ValueError, TypeError):
-                    continue
-                if hs == as_:                       # shootout: winner unknown here
-                    continue
-                win, lose = ((m["home"], m["away"]) if hs > as_ else (m["away"], m["home"]))
-                out.append({"winner": win, "loser": lose})
+            matches, ok = feed.day(key), True
         except Exception:
-            pass
+            ok = False
+        day_res = []
+        for m in matches:
+            if m["state"] != "post":
+                continue
+            res = _ko_result(m)
+            if res:
+                day_res.append({"winner": res[0], "loser": res[1]})
+        # Only cache a past day once it's fully final (avoids caching transients).
+        if d < today and ok and matches and all(x["state"] == "post" for x in matches):
+            _KO_PAST_DAYS[key] = day_res
+        out.extend(day_res)
         d += timedelta(days=1)
+    _KO_MEMO["ts"], _KO_MEMO["val"] = now, out
     return out
 
 

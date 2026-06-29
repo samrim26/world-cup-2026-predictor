@@ -115,9 +115,11 @@ class ESPNFeed(BaseFeed):
                 "home": home.get("team", {}).get("abbreviation", "?"),
                 "home_name": home.get("team", {}).get("displayName", "?"),
                 "home_score": home.get("score", "0"),
+                "home_winner": bool(home.get("winner")),   # set on shootout wins too
                 "away": away.get("team", {}).get("abbreviation", "?"),
                 "away_name": away.get("team", {}).get("displayName", "?"),
                 "away_score": away.get("score", "0"),
+                "away_winner": bool(away.get("winner")),
                 "status": st.get("description", ""),
                 "state": st.get("state", ""),          # pre / in / post
                 "clock": e.get("status", {}).get("displayClock", ""),

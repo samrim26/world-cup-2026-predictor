@@ -76,6 +76,8 @@
   .scorebar .metric{font-size:30px}
   .lever{padding:6px 0;border-top:1px solid #182135}
   .lever:first-of-type{border-top:none}
+  @keyframes flashpop{0%{box-shadow:0 0 0 2px var(--accent);background:rgba(61,107,255,.18)}100%{box-shadow:none;background:transparent}}
+  .flash{animation:flashpop 1.4s ease-out;border-radius:8px}
   /* bracket */
   .bk{display:flex;align-items:stretch;gap:6px;overflow-x:auto;padding:6px 0}
   .side{display:flex;flex:1}
@@ -436,14 +438,33 @@ const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','De
 function fmtDate(d){if(!d)return '';const[y,m,da]=d.split('-');return `${MON[+m-1]} ${+da}`;}
 function isReal(ab){return DATA.rankings.some(r=>r.abbr===ab)}
 
+let lastTotals={you:null,rival:null}, pollTimer=null;
+function scheduleNext(){
+  // poll fast while a match is live, slower when idle
+  const live=DATA&&DATA.today&&DATA.today.some(m=>m.state==='in');
+  clearTimeout(pollTimer);
+  pollTimer=setTimeout(load, live?5000:30000);
+}
+function flashScores(){
+  document.querySelectorAll('.scorebar,#champ').forEach(e=>{
+    e.classList.remove('flash');void e.offsetWidth;e.classList.add('flash');});
+}
 async function load(){
   try{
     const r=await fetch('/api/live',{cache:'no-store'});DATA=await r.json();
-    if(DATA.error){document.getElementById('app').innerHTML=`<p class="err">Feed error: ${esc(DATA.error)}</p>`;return;}
+    if(DATA.error){document.getElementById('app').innerHTML=`<p class="err">Feed error: ${esc(DATA.error)}</p>`;scheduleNext();return;}
+    const changed=DATA.pool&&lastTotals.you!==null&&
+      (DATA.pool.you.total!==lastTotals.you||DATA.pool.rival.total!==lastTotals.rival);
+    if(DATA.pool)lastTotals={you:DATA.pool.you.total,rival:DATA.pool.rival.total};
     nav();meta();body();
+    if(changed)flashScores();
   }catch(e){document.getElementById('app').innerHTML=`<p class="err">Could not load: ${esc(e.message)}</p>`;}
+  scheduleNext();
 }
-load();setInterval(load,30000);
+// refresh immediately when the tab/window regains focus, too
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)load();});
+window.addEventListener('focus',load);
+load();
 </script>
 </body>
 </html>

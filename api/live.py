@@ -92,7 +92,8 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
-        # CDN-cache briefly so rapid refreshes don't hammer the upstream API.
-        self.send_header("Cache-Control", "s-maxage=20, stale-while-revalidate=40")
+        # Keep the edge cache very short so match decisions surface within a few
+        # seconds; the snapshot memoises past days so this stays cheap.
+        self.send_header("Cache-Control", "s-maxage=3, stale-while-revalidate=10")
         self.end_headers()
         self.wfile.write(body)
